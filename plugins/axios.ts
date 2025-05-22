@@ -5,8 +5,9 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 
 export default defineNuxtPlugin(nuxtApp => {
+  const config = useRuntimeConfig()
   const instance = axios.create({
-    baseURL: '/api', // 确保你的baseURL正确指向Nuxt的API路由
+    baseURL: config.public.API_BASE_URL || '/api', // 动态获取baseURL
     timeout: 30000, // 超时时间提升到10秒
     headers: {
       'Content-Type': 'application/json',

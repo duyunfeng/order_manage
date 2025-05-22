@@ -11,5 +11,10 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxt/ui',
     '@pinia/nuxt',
-  ]
+  ],
+  runtimeConfig: {
+    public: {
+      API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3000/api',
+    }
+  }
 })
