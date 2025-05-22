@@ -47,13 +47,13 @@ export default defineNuxtConfig({
       ],
       // 明确告诉 Rollup 某些模块即使没有直接 export，也可能产生副作用，需要保留
       // 这可以帮助解决一些构建时被“tree-shaking”掉，但运行时又需要的依赖
-      moduleSideEffects: [
-        // 确保 Prisma 客户端及其相关部分被正确处理，即使没有直接 export
-        '@prisma/client',
-        'prisma',
-        // 可能还需要添加其他相关的依赖，例如 @element-plus/icons-vue 等
-        // 如果你在其他地方也遇到模块找不到的问题
-      ],
+      // moduleSideEffects: [
+      //   // 确保 Prisma 客户端及其相关部分被正确处理，即使没有直接 export
+      //   '@prisma/client',
+      //   'prisma',
+      //   // 可能还需要添加其他相关的依赖，例如 @element-plus/icons-vue 等
+      //   // 如果你在其他地方也遇到模块找不到的问题
+      // ],
     },
     // 确保你的 Node.js 版本兼容性
     esbuild: {
