@@ -1,0 +1,1 @@
+import{a0 as o}from"./BxW7P6YO.js";async function n(t){const a=new FormData;return a.append("file",t),(await o.post("/api/upload",a,{headers:{"Content-Type":"multipart/form-data"}})).data.data.url}export{n as u};
