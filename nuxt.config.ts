@@ -60,4 +60,10 @@ export default defineNuxtConfig({
       target: 'node18' // 或者你实际使用的 Node.js LTS 版本
     }
   },
+  build: {
+    transpile: [
+      'element-plus', // 之前可能已经添加过，确保有
+      '@popperjs/core', // <-- 添加这一行
+    ],
+  },
 })
