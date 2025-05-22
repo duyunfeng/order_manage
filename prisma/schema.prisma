@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model order {
+  id           String   @id
+  customer     String
+  goodsList    Json
+  amount       Float?
+  status       String
+  shippingDate String?
+  contractUrl  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  contractFileList Json?
+}
+
+model customer {
+  id        String   @id
+  name      String
+  contact   String?
+  phone     String?
+  address   String?
+  email     String?
+  status    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  registeredAt String?
+}
+
+model factory {
+  id        String   @id
+  name      String
+  contact   String?
+  phone     String?
+  address   String?
+  email     String?
+  manager   String?
+  status    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  goods     GoodFactory[]  // 反向关系字段
+}
+
+model good {
+  id        String   @id
+  name      String
+  status    String   @default("on")
+  code      String?
+  price     Float
+  unit      String?
+  spec      String?
+  category  String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  factories GoodFactory[]  // 关联中间表
+}
+
+model GoodFactory {
+  id        String   @id @default(uuid())
+  good      good     @relation(fields: [goodId], references: [id])
+  goodId    String
+  factory   factory  @relation(fields: [factoryId], references: [id])
+  factoryId String
+
+  @@unique([goodId, factoryId])
+}
+
+model user {
+  id        String   @id
+  username  String   @unique
+  password  String
+  name      String?
+  email     String?
+  avatar    String?
+  avatarFile String?
+  role      String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
