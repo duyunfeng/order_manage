@@ -60,6 +60,13 @@ export default defineNuxtConfig({
       target: 'node18' // 或者你实际使用的 Node.js LTS 版本
     }
   },
+  vite: {
+    build: {
+      sourcemap: false, // 禁用客户端和SSR构建的Sourcemap
+      // 如果需要调整大文件警告阈值
+      chunkSizeWarningLimit: 1000, // 例如，将警告阈值提高到 1000 kB
+    }
+  },
   build: {
     transpile: [
       'element-plus', // 之前可能已经添加过，确保有
