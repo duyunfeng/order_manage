@@ -94,7 +94,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/html/order-manage/backend_app # 进入后端部署目录
+            cd /var/www/html/order-manage/backend_app/backend # 进入后端部署目录
 
             # 重要的是：在服务器上重新安装生产依赖
             # 因为你上传的是源代码，而不是整个 node_modules 目录
@@ -104,7 +104,7 @@ jobs:
             # 如果你的后端应用是使用 pm2 管理的，请取消注释并调整
             pm2 status || npm install -g pm2 # 如果服务器上没有pm2，可以尝试安装
             pm2 list # 查看pm2管理的进程
-            pm2 reload order-manage || pm2 start index.js --name order-manage # 根据你的后端入口文件和pm2配置调整
+            pm2 reload order-manage || pm2 start src/index.js --name order-manage # 根据你的后端入口文件和pm2配置调整
 
             # 如果是 systemd 服务：
             # sudo systemctl restart your_backend_service_name
