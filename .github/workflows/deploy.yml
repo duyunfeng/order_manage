@@ -1,0 +1,60 @@
+name: Deploy to Production with pnpm # 工作流名称，加上pnpm以便区分
+
+on:
+  push:
+    branches:
+      - main # 当推送到 main 分支时触发
+
+jobs:
+  build-and-deploy: # 定义一个作业
+    runs-on: ubuntu-latest # 在 Ubuntu 最新版虚拟机上运行
+
+    steps:
+      - name: Checkout code # 步骤1: 检出代码
+        uses: actions/checkout@v4 # 使用 GitHub 官方的 actions/checkout 动作
+
+      - name: Set up Node.js # 步骤2: 设置 Node.js 环境 (如果你的项目是 Node.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # 使用 Node.js 18 版本
+          # 重要：添加 cache 选项来缓存 pnpm 的依赖，加速后续运行
+          cache: 'pnpm' # 缓存 pnpm 的依赖
+
+      - name: Install pnpm # 步骤3: 安装 pnpm 本身
+        run: npm install -g pnpm # 或者使用 corepack enable 来激活 pnpm
+
+      - name: Install dependencies with pnpm # 步骤4: 使用 pnpm 安装项目依赖
+        run: pnpm install --frozen-lockfile # --frozen-lockfile 确保使用 pnpm-lock.yaml，避免不一致
+
+      - name: Build project with pnpm # 步骤5: 使用 pnpm 构建项目 (例如 Vue/React 项目)
+        run: pnpm run build
+
+      # 这里是部署步骤，具体取决于你的部署方式
+      - name: Deploy to Server via SCP # 步骤6: 部署到服务器 (例如通过 SCP)
+        uses: appleboy/scp-action@v0.1.7 # 使用一个第三方 SCP Action
+        with:
+          host: ${{ secrets.SSH_HOST }} # 服务器 IP 或域名，存储在 Secrets 中
+          username: ${{ secrets.SSH_USERNAME }} # SSH 用户名，存储在 Secrets 中
+          # password: ${{ secrets.SSH_PASSWORD }} # SSH 密码，存储在 Secrets 中 (不推荐直接用密码，建议用 SSH Key)
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # 推荐使用 SSH Key
+          source: "dist/" # 要上传的本地文件/文件夹 (构建后的输出目录)
+          target: "/var/www/html/order-manage" # 服务器上的目标路径
+
+      - name: Run remote commands (Optional) # 步骤7: 在服务器上执行后续命令
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          # password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/node/order-manage
+            # pm2 restart your-app # 例如，重启你的 Node.js 应用
+            echo "Deployment completed and server restarted."
+
+      # 如果部署到 GitHub Pages:
+      # - name: Deploy to GitHub Pages
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./dist # 你的构建输出目录
