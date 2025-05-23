@@ -1,85 +1,68 @@
-# Nuxt Minimal Starter
 
-本项目基于 Nuxt 3 + TypeScript，已集成 Element Plus、Pinia、Axios、ESLint、Prettier、Vitest、Cypress 等主流工具。
+---
 
 ## 快速开始
 
-### 安装依赖
+### 1. 安装依赖
+
+分别安装前后端依赖：
 
 ```bash
+cd frontend
+pnpm install
+
+cd ../backend
 pnpm install
 ```
 
-### 启动开发服务器
+### 2. 启动开发环境
+
+分别启动前后端：
 
 ```bash
+# 启动前端
+cd frontend
+pnpm dev
+
+# 启动后端
+cd ../backend
 pnpm dev
 ```
 
-### 生产构建与预览
+### 3. 生产构建
+
+前端：
 
 ```bash
+cd frontend
 pnpm build
-pnpm preview
 ```
 
-## 环境变量
-
-在根目录下创建 `.env` 文件，参考 `.env.example`，用于配置不同环境的变量，例如：
-
-```env
-API_BASE_URL=https://api.example.com
-```
-
-## 目录结构建议
-
-- `components/`：全局/局部组件
-- `pages/`：页面文件
-- `store/`：Pinia 状态管理
-- `composables/`：组合式函数
-- `utils/`：工具函数
-- `plugins/`：Nuxt 插件
-
-## 代码规范与测试
-
-- 格式化代码：
-  ```bash
-  pnpm format
-  ```
-- 代码检查：
-  ```bash
-  pnpm lint
-  ```
-- 单元测试：
-  ```bash
-  pnpm test
-  ```
-
-## 推荐：Git Hooks 自动化
-
-建议集成 [lint-staged](https://github.com/okonet/lint-staged) 和 [husky](https://github.com/typicode/husky)，实现提交前自动格式化和 lint。
-
-安装依赖：
+后端（如有构建脚本）：
 
 ```bash
-pnpm add -D lint-staged husky
+cd backend
+pnpm build
 ```
 
-初始化 husky 并添加 pre-commit 钩子：
+---
 
-```bash
-npx husky install
-npx husky add .husky/pre-commit "npx lint-staged"
-```
+## 其他说明
 
-在 `package.json` 增加 lint-staged 配置：
+- **API 代理**：前端开发时通过 Vite 配置代理 `/api` 到后端服务端口。
+- **数据库**：后端使用 Prisma 连接 MySQL，相关 schema 和 seed 脚本在 `backend/prisma/`。
+- **环境变量**：前后端分别维护各自的 `.env` 文件。
 
-```json
-"lint-staged": {
-  "*.{js,ts,vue}": ["eslint --fix", "prettier --write"]
-}
-```
+---
 
-## 参考文档
+## 推荐工具
 
-- [Nuxt 官方文档](https://nuxt.com/docs/getting-started/introduction)
+- 代码规范：ESLint、Prettier
+- 单元测试：Vitest（前端）
+- 进程管理：PM2（后端，见 `ecosystem.config.js`）
+
+---
+
+## 贡献
+
+欢迎提 issue 或 PR 参与项目改进！

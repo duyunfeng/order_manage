@@ -22,3 +22,6 @@ logs
 .env
 .env.*
 !.env.example
+
+# 其他
+*.local

@@ -1,1 +1,0 @@
-import{a as t}from"./BxW7P6YO.js";function n(r){const{$axios:e}=t();return e.get("/orders",{params:r})}function d(r){const{$axios:e}=t();return e.post("/orders",r)}function a(r,e){const{$axios:o}=t();return o.put(`/orders/${r}`,e)}function u(r){const{$axios:e}=t();return e.delete(`/orders/${r}`)}export{d as a,u as d,n as g,a as u};
