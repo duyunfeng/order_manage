@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master # 确保这是你的主分支
+  workflow_dispatch:
 
 jobs:
   # ------ 前端部署作业 (已有的，略微调整) ------
