@@ -22,9 +22,11 @@ jobs:
         run: npm install -g pnpm # 或者使用 corepack enable 来激活 pnpm
 
       - name: Install dependencies with pnpm # 步骤4: 使用 pnpm 安装项目依赖
+        working-directory: ./frontend # <--- 添加这一行，指向你的 package.json 所在的目录
         run: pnpm install --frozen-lockfile # --frozen-lockfile 确保使用 pnpm-lock.yaml，避免不一致
 
       - name: Build project with pnpm # 步骤5: 使用 pnpm 构建项目 (例如 Vue/React 项目)
+        working-directory: ./frontend # <--- 添加这一行，指向你的 package.json 所在的目录
         run: pnpm run build
 
       # 这里是部署步骤，具体取决于你的部署方式
@@ -36,7 +38,7 @@ jobs:
           # password: ${{ secrets.SSH_PASSWORD }} # SSH 密码，存储在 Secrets 中 (不推荐直接用密码，建议用 SSH Key)
           key: ${{ secrets.SSH_PRIVATE_KEY }} # 推荐使用 SSH Key
           source: "dist/" # 要上传的本地文件/文件夹 (构建后的输出目录)
-          target: "/var/www/html/order-manage" # 服务器上的目标路径
+          target: "/var/www/html/order-manage/frontend" # 服务器上的目标路径
 
       - name: Run remote commands (Optional) # 步骤7: 在服务器上执行后续命令
         uses: appleboy/ssh-action@v1.0.3
@@ -46,7 +48,7 @@ jobs:
           # password: ${{ secrets.SSH_PASSWORD }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/node/order-manage
+            cd /var/www/html/order-manage/backend
             # pm2 restart your-app # 例如，重启你的 Node.js 应用
             echo "Deployment completed and server restarted."
 
