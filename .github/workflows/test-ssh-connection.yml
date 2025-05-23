@@ -1,0 +1,26 @@
+name: Test SSH Connection to Server # 工作流名称
+
+on:
+  workflow_dispatch: # 允许手动触发此工作流
+
+jobs:
+  test_connection:
+    runs-on: ubuntu-latest # 使用与部署工作流相同的 Runner 环境
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test SSH Connection # 核心测试步骤
+        uses: appleboy/ssh-action@v1.0.3 # 使用与部署相同的 SSH Action
+        with:
+          host: ${{ secrets.SSH_HOST }}      # 从 Secrets 获取服务器 IP
+          username: ${{ secrets.SSH_USERNAME }} # 从 Secrets 获取 SSH 用户名
+          key: ${{ secrets.SSH_PRIVATE_KEY }}   # 从 Secrets 获取 SSH 私钥
+          script: |
+            echo "Successfully connected to the server!"
+            # 可以在这里添加一个简单的命令来验证，例如查看当前目录
+            # ls -lah
+            # hostname
+            # whoami
+            # exit 0 # 确保脚本以成功状态退出
