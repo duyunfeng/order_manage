@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables from .env file at the very start
+
 import express from 'express'
 import cors from 'cors'
 import usersRouter from '../routes/users.js'
@@ -27,6 +30,12 @@ app.use('/api/upload', uploadRouter)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
+
+// Global error handler (optional but good practice)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.stack);
+  res.status(500).send('Something broke!');
+});
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
