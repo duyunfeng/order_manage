@@ -102,9 +102,9 @@ jobs:
             pnpm install --prod # 假设服务器上也安装了 pnpm，并且需要重新安装依赖
 
             # 如果你的后端应用是使用 pm2 管理的，请取消注释并调整
-            # pm2 status || npm install -g pm2 # 如果服务器上没有pm2，可以尝试安装
-            # pm2 list # 查看pm2管理的进程
-            # pm2 reload your_backend_app_name || pm2 start index.js --name your_backend_app_name # 根据你的后端入口文件和pm2配置调整
+            pm2 status || npm install -g pm2 # 如果服务器上没有pm2，可以尝试安装
+            pm2 list # 查看pm2管理的进程
+            pm2 reload order-manage || pm2 start index.js --name order-manage # 根据你的后端入口文件和pm2配置调整
 
             # 如果是 systemd 服务：
             # sudo systemctl restart your_backend_service_name
