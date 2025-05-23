@@ -100,7 +100,8 @@ jobs:
             # 因为你上传的是源代码，而不是整个 node_modules 目录
             echo "Installing backend dependencies on server..."
             pnpm install --prod # 假设服务器上也安装了 pnpm，并且需要重新安装依赖
-
+            pnpm prisma generate
+            # pnpm prisma migrate deploy # 如需自动迁移数据库可取消注释
             # 如果你的后端应用是使用 pm2 管理的，请取消注释并调整
             pm2 status || npm install -g pm2 # 如果服务器上没有pm2，可以尝试安装
             pm2 list # 查看pm2管理的进程
