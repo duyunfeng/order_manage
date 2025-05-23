@@ -1,9 +1,7 @@
 name: Deploy to Production with pnpm # 工作流名称，加上pnpm以便区分
 
 on:
-  push:
-    branches:
-      - master # 当推送到 main 分支时触发
+  workflow_dispatch: # 允许手动触发此工作流
 
 jobs:
   build-and-deploy: # 定义一个作业
