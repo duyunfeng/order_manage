@@ -49,20 +49,20 @@ jobs:
 
   # ------ 后端部署作业 (新增) ------
   backend-build-and-deploy:
-    needs: [frontend-build-and-deploy] # 确保前端部署成功后才运行后端部署
+    needs: [frontend-build-and-deploy]
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js for Backend # 设置后端 Node.js 环境
+      - name: Set up Node.js for Backend
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           # cache: 'pnpm' # 移除 cache: 'pnpm'
 
-      - name: Install pnpm for Backend # 安装 pnpm
+      - name: Install pnpm for Backend
         run: npm install -g pnpm
 
       - name: Verify pnpm installation for Backend
@@ -72,14 +72,10 @@ jobs:
         working-directory: ./backend # 指向后端的 package.json 目录
         run: pnpm install --frozen-lockfile --prod # --prod 仅安装生产依赖
 
-      # 如果后端有编译步骤，例如 TypeScript，可以添加：
-      - name: Build backend project (if needed)
-        working-directory: ./backend
-        run: pnpm run build # 假设你的后端 package.json 有一个 build 脚本用于编译
-
-      # - name: List backend output directory (Optional) # 验证后端构建/准备结果
+      # 移除或注释掉 'Build backend project (if needed)' 这一步
+      # - name: Build backend project (if needed)
       #   working-directory: ./backend
-      #   run: ls -lah ./dist/ # 或其他输出目录，如果后端需要编译的话
+      #   run: pnpm run build # 假设你的后端 package.json 有一个 build 脚本用于编译
 
       - name: Deploy backend to Server via SCP # 后端部署
         uses: appleboy/scp-action@v0.1.7
@@ -87,9 +83,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # 后端通常不需要编译整个目录，只需传输源代码或编译后的输出
-          # 假设你的后端项目根目录 (backend/) 就是要传输的
-          source: "backend/" # 要上传的后端源代码或编译后文件
+          # 后端通常只需要传输源代码和 node_modules
+          source: "backend/" # 上传整个后端代码目录
           target: "/var/www/html/order-manage/backend_app" # 服务器上后端代码的目标路径
 
       - name: Run remote commands for Backend # 在服务器上执行后端相关命令
@@ -100,16 +95,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/html/order-manage/backend_app # 进入后端部署目录
-            # 如果后端是 Node.js 应用，使用 pm2 重启
+
+            # 重要的是：在服务器上重新安装生产依赖
+            # 因为你上传的是源代码，而不是整个 node_modules 目录
+            echo "Installing backend dependencies on server..."
+            pnpm install --prod # 假设服务器上也安装了 pnpm，并且需要重新安装依赖
+
+            # 如果你的后端应用是使用 pm2 管理的，请取消注释并调整
             # pm2 status || npm install -g pm2 # 如果服务器上没有pm2，可以尝试安装
             # pm2 list # 查看pm2管理的进程
-            # pm2 reload your_backend_app_name || pm2 start dist/main.js --name your_backend_app_name # 根据你的后端入口文件和pm2配置调整
-            # pm2 save # 保存pm2状态，以便重启后自动恢复
+            # pm2 reload your_backend_app_name || pm2 start index.js --name your_backend_app_name # 根据你的后端入口文件和pm2配置调整
 
-            # 或者如果是 systemd 服务：
+            # 如果是 systemd 服务：
             # sudo systemctl restart your_backend_service_name
 
-            # 确保安装生产依赖（如果之前没有 --prod 标志或需要额外依赖）
-            # pnpm install --prod
+            echo "Backend deployment completed and service restarted."
+
 
             echo "Backend deployment completed and service restarted."
