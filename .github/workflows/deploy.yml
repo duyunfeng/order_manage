@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '18' # 使用 Node.js 18 版本
           # 重要：添加 cache 选项来缓存 pnpm 的依赖，加速后续运行
-          cache: 'pnpm' # 缓存 pnpm 的依赖
+          # cache: 'pnpm' # 缓存 pnpm 的依赖
 
       - name: Install pnpm # 步骤3: 安装 pnpm 本身
         run: npm install -g pnpm # 或者使用 corepack enable 来激活 pnpm
