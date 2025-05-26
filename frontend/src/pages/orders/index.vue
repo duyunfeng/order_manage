@@ -131,17 +131,23 @@
       <el-dialog
         v-model="previewDialogVisible"
         title="合同预览"
-        width="80vw"
-        top="5vh"
+        width="90vw"
+        top="2vh"
         custom-class="preview-dialog"
       >
-        <div class="preview-dialog-flex">
-          <div class="preview-dialog-body-full">
-            <iframe v-if="previewUrl" :src="previewUrl" class="preview-iframe-full"></iframe>
+        <div class="preview-dialog-flex" style="height: 85vh">
+          <div class="preview-dialog-body-full" style="height: 100%">
+            <iframe
+              v-if="previewUrl"
+              :src="previewUrl"
+              class="preview-iframe-full"
+              style="height: 100%"
+            ></iframe>
             <div v-else class="preview-empty-tip">暂不支持预览该类型文件，请下载后查看</div>
           </div>
           <div v-if="downloadUrl" class="preview-dialog-footer">
             <el-button type="primary" @click="downloadFile(downloadUrl)">下载文件</el-button>
+            <el-button @click="refreshPreview">刷新</el-button>
           </div>
         </div>
       </el-dialog>
@@ -159,7 +165,7 @@ declare global {
 }
 import { ref, onMounted, computed, onBeforeUnmount, reactive } from 'vue'
 import BaseFilter from '@/components/BaseFilter.vue'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessageBox, ElMessage, ElLoading } from 'element-plus'
 import BaseDialogForm from '@/components/BaseDialogForm.vue'
 import BaseTable from '@/components/BaseTable.vue'
 import BaseActions from '@/components/BaseActions.vue'
@@ -382,36 +388,56 @@ function handleDelete(row: any) {
   })
 }
 
-async function previewContractFile(url: string) {
-  const ext = url.split('.').pop()?.toLowerCase()
-  if (ext === 'pdf') {
-    previewUrl.value = url
-    previewDialogVisible.value = true
-    downloadUrl.value = url
-    return
-  }
-  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
-  if (officeExts.includes(ext)) {
-    const filename = url.split('/').pop()
-    try {
+async function previewContractFile(url: string, force = false) {
+  const loadingInstance = ElLoading.service({ fullscreen: true, text: '加载中...' })
+  try {
+    const ext = url.split('.').pop()?.toLowerCase()
+    if (ext === 'pdf') {
+      previewUrl.value = url
+      previewDialogVisible.value = true
+      downloadUrl.value = url
+      setTimeout(() => {
+        const iframe = document.querySelector('.preview-iframe-full') as HTMLIFrameElement
+        if (iframe) {
+          iframe.onload = () => loadingInstance.close()
+        } else {
+          loadingInstance.close()
+        }
+      }, 0)
+      return
+    }
+    const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
+    if (officeExts.includes(ext)) {
+      const filename = url.split('/').pop()
       const res = await fetch('/api/convert/to-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename }),
+        body: JSON.stringify({ filename, force }),
       }).then(r => r.json())
       if (res.url) {
-        previewUrl.value = res.url
+        previewUrl.value = res.url + '?t=' + Date.now() // 防止缓存
         previewDialogVisible.value = true
         downloadUrl.value = res.url
+        setTimeout(() => {
+          const iframe = document.querySelector('.preview-iframe-full') as HTMLIFrameElement
+          if (iframe) {
+            iframe.onload = () => loadingInstance.close()
+          } else {
+            loadingInstance.close()
+          }
+        }, 0)
       } else {
+        loadingInstance.close()
         ElMessageBox.alert('文件转换失败，请下载后查看', '提示')
       }
-    } catch (e) {
-      ElMessageBox.alert('文件转换失败，请下载后查看', '提示')
+      return
     }
-    return
+    loadingInstance.close()
+    ElMessageBox.alert('暂不支持预览该类型文件，请下载后查看', '提示')
+  } catch (e) {
+    loadingInstance.close()
+    ElMessageBox.alert('文件转换失败，请下载后查看', '提示')
   }
-  ElMessageBox.alert('暂不支持预览该类型文件，请下载后查看', '提示')
 }
 
 function downloadFile(url: string) {
@@ -534,6 +560,12 @@ const columns = [
 function handleSubmit() {
   // 只做表单校验和提交
   handleDialogSubmit(dialogForm.value)
+}
+
+function refreshPreview() {
+  if (downloadUrl.value) {
+    previewContractFile(downloadUrl.value, true)
+  }
 }
 
 // expose 相关方法，确保 template 可访问

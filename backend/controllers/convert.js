@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export const toPdf = (req, res) => {
-  const { filename } = req.body // 前端传文件名
+  const { filename, force } = req.body // 新增force参数
   const uploadsDir = path.join(__dirname, '../uploads')
   const filePath = path.join(uploadsDir, filename)
   const ext = path.extname(filename).toLowerCase()
@@ -22,8 +22,8 @@ export const toPdf = (req, res) => {
   // 转换后的 PDF 路径
   const pdfName = filename.replace(ext, '.pdf')
   const pdfPath = path.join(uploadsDir, pdfName)
-  // 如果已存在 PDF，直接返回
-  if (fs.existsSync(pdfPath)) {
+  // force为true时强制重新转换
+  if (fs.existsSync(pdfPath) && !force) {
     return res.json({ url: `/uploads/${pdfName}` })
   }
   // LibreOffice 转换
