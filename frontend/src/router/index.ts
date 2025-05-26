@@ -12,7 +12,7 @@ router.beforeEach((to, from, next) => {
   if (to.path === '/users') {
     // 由于pinia store在setup外部无法直接用，需要用useUserStore()获取
     const userStore = useUserStore()
-    if (userStore.user.role !== 'admin') {
+    if (!['admin', '管理员'].includes(userStore.user.role)) {
       // 可重定向到首页或提示无权限
       return next('/')
     }
