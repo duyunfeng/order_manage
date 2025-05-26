@@ -21,6 +21,7 @@
       <BaseTable
         :tableData="goodsList"
         :columns="columns"
+        :loading="isLoading"
         :pagination="{ page: page, pageSize: pageSize, total: total }"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
@@ -267,50 +268,56 @@ const goodsList = ref([])
 const imagePreviewVisible = ref(false)
 const imagePreviewList = ref<string[]>([])
 const imagePreviewIndex = ref(0)
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const showDetail = ref(false)
-const detailData = ref(null)
+const detailData = ref<any>(null)
+const isLoading = ref(false)
 
-onMounted(async () => {
-  await fetchGoods()
+onMounted(() => {
+  fetchGoodsList()
 })
 
-async function fetchGoods() {
-  // 使用API函数获取商品列表数据
-  const res = await getGoods(filter.value)
-  goodsList.value =
-    res.data.map(item => {
-      console.log(item)
-      return {
-        ...item,
-        spec: JSON.parse(item.spec),
-        factories: item.factories.map(f => f.factory),
-      }
-    }) || []
+async function fetchGoodsList() {
+  isLoading.value = true
+  try {
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      ...filter.value,
+    }
+    const res = await getGoods(params)
+    goodsList.value = res.data
+    total.value = res.total
+  } catch (error) {
+    console.error('Failed to fetch goods:', error)
+    ElMessage.error('获取商品列表失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
-/**
- * 处理筛选查询
- * @param filter 查询条件
- */
-function handleSearch(f: any) {
-  // 重新拉取数据后本地过滤
-  fetchGoods().then(() => {
-    goodsList.value = goodsList.value.filter(item => {
-      const matchId = !f.id || item.id.includes(f.id)
-      const matchName = !f.name || item.name.includes(f.name)
-      const matchStatus = !f.status || item.status === f.status
-      const matchDate = !f.createdAt || item.createdAt.startsWith(f.createdAt)
-      return matchId && matchName && matchStatus && matchDate
-    })
-  })
+function handleSearch() {
+  page.value = 1
+  fetchGoodsList()
 }
 
-/**
- * 重置筛选条件
- */
 function handleReset() {
   filter.value = { id: '', name: '', status: '', createdAt: '' }
-  fetchGoods()
+  page.value = 1
+  fetchGoodsList()
+}
+
+function handlePageChange(newPage: number) {
+  page.value = newPage
+  fetchGoodsList()
+}
+
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize
+  page.value = 1
+  fetchGoodsList()
 }
 
 /**
@@ -355,7 +362,7 @@ function handleDelete(row: any) {
     type: 'warning',
   }).then(() => {
     deleteGood(row.id).then(() => {
-      fetchGoods()
+      fetchGoodsList()
     })
   })
 }
@@ -370,7 +377,7 @@ function handleToggleStatus(row: any, status: 'on' | 'off') {
     ...row,
     status,
   }).then(() => {
-    fetchGoods()
+    fetchGoodsList()
   })
 }
 
@@ -450,7 +457,7 @@ async function handleDialogSubmit(form: any) {
     await addGood(goodsData)
     ElMessage.success('商品添加成功')
   }
-  fetchGoods()
+  fetchGoodsList()
   showDialog.value = false
   resetDialogForm()
 }

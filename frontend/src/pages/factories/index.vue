@@ -21,6 +21,7 @@
       <BaseTable
         :tableData="factoriesList"
         :columns="columns"
+        :loading="isLoading"
         :pagination="{ page: page, pageSize: pageSize, total: total }"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
@@ -156,29 +157,38 @@ const pageSize = ref(20)
 const total = ref(0)
 const showDetail = ref(false)
 const detailData = ref(null)
+const isLoading = ref(false)
 
-onMounted(fetchFactories)
+onMounted(fetchFactoriesList)
 
-async function fetchFactories() {
-  const res = await getFactories({ ...filter.value, page: page.value, pageSize: pageSize.value })
-  factoriesList.value = res.data || res
-  total.value = res.data.total || 0
+async function fetchFactoriesList() {
+  isLoading.value = true
+  try {
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      ...filter.value,
+    }
+    const res = await getFactories(params)
+    factoriesList.value = res.data
+    total.value = res.total
+  } catch (error) {
+    console.error('Failed to fetch factories:', error)
+    ElMessage.error('获取工厂列表失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function handleSearch(f: any) {
-  fetchFactories().then(() => {
-    factoriesList.value = factoriesList.value.filter(item => {
-      const matchId = !f.id || item.id.includes(f.id)
-      const matchName = !f.name || item.name.includes(f.name)
-      const matchStatus = !f.status || item.status === f.status
-      return matchId && matchName && matchStatus
-    })
-  })
+function handleSearch() {
+  page.value = 1
+  fetchFactoriesList()
 }
 
 function handleReset() {
   filter.value = { id: '', name: '', status: '' }
-  fetchFactories()
+  page.value = 1
+  fetchFactoriesList()
 }
 
 function openAddDialog() {
@@ -215,7 +225,7 @@ async function handleDialogSubmit(form: any) {
       await addFactory(submitData)
       ElMessage.success('工厂添加成功')
     }
-    fetchFactories()
+    fetchFactoriesList()
     showDialog.value = false
     resetDialogForm()
   } catch (e) {
@@ -234,20 +244,20 @@ function handleDelete(row: any) {
     type: 'warning',
   }).then(() => {
     deleteFactory(row.id).then(() => {
-      fetchFactories()
+      fetchFactoriesList()
     })
   })
 }
 
-function handlePageChange(val) {
-  page.value = val
-  fetchFactories()
+function handlePageChange(newPage: number) {
+  page.value = newPage
+  fetchFactoriesList()
 }
 
-function handlePageSizeChange(val) {
-  pageSize.value = val
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize
   page.value = 1
-  fetchFactories()
+  fetchFactoriesList()
 }
 
 function handleView(row) {

@@ -1,13 +1,14 @@
 <template>
   <div class="base-table-wrapper">
     <el-table
+      v-loading="loading"
       :data="tableData"
+      :row-style="{ height: '80px' }"
       style="width: 100%"
       class="base-table"
       :border="true"
       :fit="true"
       :scrollbar-always-on="true"
-      :max-height="null"
       :show-overflow-tooltip="true"
     >
       <el-table-column
@@ -24,15 +25,17 @@
             <slot :name="col.prop" v-bind="scope" />
           </template>
           <template v-else-if="['createdAt', 'updatedAt'].includes(col.prop)">
-            <span>{{ dayjs(scope.row[col.prop]).format('YYYY-MM-DD HH:mm:ss') }}</span>
+            <span>{{
+              scope.row[col.prop] ? dayjs(scope.row[col.prop]).format('YYYY-MM-DD HH:mm:ss') : '-'
+            }}</span>
           </template>
           <template v-else-if="col.prop === 'actions' && typeof col.getActions === 'function'">
-            <div style="display: flex; gap: 4px">
+            <div style="display: flex; align-items: center; gap: 4px; height: 100%">
               <el-button
                 v-for="(action, idx) in col.getActions(scope.row, scope.$index)"
                 link
                 :key="idx"
-                :type="action.type || 'default'"
+                :type="action.type || 'primary'"
                 @click="action.onClick(scope.row, scope.$index)"
                 v-bind="action.buttonProps || {}"
               >
@@ -48,9 +51,10 @@
     </el-table>
     <el-pagination
       v-if="pagination && pagination.total > 0"
-      style="margin: 16px 0 0; text-align: right"
+      style="margin: 16px 0 0; text-align: right; float: right"
       background
-      layout="total, sizes, prev, pager, next, jumper"
+      layout="total, prev, pager, next, jumper"
+      :hide-on-single-page="true"
       :total="pagination.total"
       :page-size="pagination.pageSize"
       :current-page="pagination.page"
@@ -62,51 +66,62 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, PropType } from 'vue'
 import dayjs from 'dayjs'
 
-/**
- * 通用表格组件
- * @prop tableData 表格数据
- * @prop columns 表格列配置
- * @prop pagination 分页配置
- * @emits factory-click 工厂跳转
- * @emits update:page 更新页码
- * @emits update:pageSize 更新页大小
- */
-const props = defineProps({
-  tableData: { type: Array, default: () => [] },
-  columns: { type: Array, default: () => [] },
-  pagination: { type: Object, default: null },
-})
-const emit = defineEmits(['factory-click', 'update:page', 'update:pageSize'])
-
-function onFactoryClick(factory: any) {
-  emit('factory-click', factory)
+interface ActionItem {
+  label: string
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'
+  onClick: (row: any, index: number) => void
+  buttonProps?: Record<string, any>
 }
+
+interface TableColumn {
+  prop: string
+  label: string
+  width?: string | number
+  minWidth?: string | number
+  slot?: boolean
+  fixed?: 'left' | 'right' | boolean
+  getActions?: (row: any, index: number) => ActionItem[]
+  // Element Plus el-table-column supports more properties, add them as needed
+}
+
+interface PaginationConfig {
+  page: number
+  pageSize: number
+  total: number
+  pageSizes?: number[]
+}
+
+const props = defineProps({
+  tableData: { type: Array as PropType<any[]>, default: () => [] },
+  columns: { type: Array as PropType<TableColumn[]>, default: () => [] },
+  pagination: { type: Object as PropType<PaginationConfig | null>, default: null },
+  loading: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['update:page', 'update:pageSize'])
+
 function onPageChange(page: number) {
   emit('update:page', page)
 }
 function onSizeChange(size: number) {
   emit('update:pageSize', size)
 }
-function formatDate(val: string) {
-  if (!val) return ''
-  return dayjs(val).format('YYYY-MM-DD HH:mm:ss')
-}
 </script>
 
 <style scoped lang="scss">
 .base-table-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: visible !important;
+  overflow-x: auto; /* Keep horizontal scroll if content overflows */
   background: transparent;
   border-radius: 16px;
-  box-shadow: none;
-  padding: 0;
-  margin-bottom: 0;
+  // box-shadow: none; // Retained from original
+  // padding: 0; // Retained from original
+  // margin-bottom: 0; // Retained from original
 }
+
 .base-table {
   .factory-tag {
     cursor: pointer;
@@ -114,23 +129,6 @@ function formatDate(val: string) {
   }
 }
 
-.main-content {
-  flex: 1;
-  min-height: 0;
-  padding: 24px;
-  background: #f0f2f5;
-  overflow-y: visible !important;
-}
-
-.el-table__body-wrapper {
-  overflow-y: visible !important;
-}
-.el-scrollbar__bar.is-vertical {
-  display: none !important;
-}
-:deep(.el-table__row) {
-  td {
-    height: 100px !important;
-  }
-}
+// Removed problematic global style overrides for el-table internals
+// :deep(.el-table__row) td { height: 100px !important; }
 </style>

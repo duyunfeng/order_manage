@@ -23,6 +23,7 @@
         v-if="columns.length"
         :tableData="usersList"
         :columns="columns"
+        :loading="isLoading"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
         @edit="handleEdit"
@@ -137,6 +138,7 @@ const dialogForm = ref<Partial<User>>({
 })
 const showDetail = ref(false)
 const detailData = ref<User | null>(null)
+const isLoading = ref(false)
 
 const roleMap: Record<string, string> = {
   admin: '管理员',
@@ -253,49 +255,49 @@ const columns = ref<ColumnConfig[]>([
   },
 ])
 
-onMounted(fetchUsers)
+onMounted(() => {
+  fetchUsersList()
+})
 
-async function fetchUsers() {
+async function fetchUsersList() {
+  isLoading.value = true
   try {
-    const res = await getUsers({ ...filter.value, page: page.value, pageSize: pageSize.value })
-    const usersData = res.data?.list || res.data || res || []
-    const totalCount = res.data?.total || usersData.length
-
-    usersList.value = usersData.map((item: any) => ({
-      ...item,
-      role: roleMap[item.role as string] || item.role,
-      createdAt: item.createdAt || '',
-      updatedAt: item.updatedAt || '',
-    }))
-    total.value = totalCount
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      ...filter.value,
+    }
+    const res = await getUsers(params)
+    usersList.value = res.data
+    total.value = res.total
   } catch (error) {
     console.error('Failed to fetch users:', error)
     ElMessage.error('获取用户列表失败')
-    usersList.value = []
-    total.value = 0
+  } finally {
+    isLoading.value = false
   }
 }
 
-function handleSearch(filters: Record<string, any>) {
+function handleSearch() {
   page.value = 1
-  fetchUsers()
+  fetchUsersList()
 }
 
 function handleReset() {
   filter.value = { id: '', username: '', status: '', registeredAt: '' }
   page.value = 1
-  fetchUsers()
+  fetchUsersList()
 }
 
 function handlePageChange(newPage: number) {
   page.value = newPage
-  fetchUsers()
+  fetchUsersList()
 }
 
 function handlePageSizeChange(newPageSize: number) {
   pageSize.value = newPageSize
   page.value = 1
-  fetchUsers()
+  fetchUsersList()
 }
 
 function openAddDialog() {
@@ -346,7 +348,7 @@ async function handleDialogSubmit(form: Partial<User>) {
       await addUser({ ...submitData, password } as User)
       showPasswordTip(password, '用户添加成功，初始密码为：')
     }
-    fetchUsers()
+    fetchUsersList()
     showDialog.value = false
     resetDialogForm()
   } catch (e) {
@@ -374,7 +376,7 @@ function handleDelete(row: User) {
       try {
         await deleteUser(row.id as string)
         ElMessage.success('用户删除成功')
-        fetchUsers()
+        fetchUsersList()
       } catch (error) {
         console.error('Delete user error:', error)
         ElMessage.error('删除失败，请重试')

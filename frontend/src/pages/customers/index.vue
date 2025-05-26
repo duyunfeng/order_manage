@@ -21,6 +21,7 @@
       <BaseTable
         :tableData="customersList"
         :columns="columns"
+        :loading="isLoading"
         :pagination="{ page: page, pageSize: pageSize, total: total }"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
@@ -167,30 +168,38 @@ const pageSize = ref(20)
 const total = ref(0)
 const showDetail = ref(false)
 const detailData = ref(null)
+const isLoading = ref(false)
 
-onMounted(fetchCustomers)
+onMounted(fetchCustomersList)
 
-async function fetchCustomers() {
-  const res = await getCustomers({ ...filter.value, page: page.value, pageSize: pageSize.value })
-  customersList.value = res.data || res
-  total.value = res.data.total || 0
+async function fetchCustomersList() {
+  isLoading.value = true
+  try {
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      ...filter.value,
+    }
+    const res = await getCustomers(params)
+    customersList.value = res.data
+    total.value = res.total
+  } catch (error) {
+    console.error('Failed to fetch customers:', error)
+    ElMessage.error('获取客户列表失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function handleSearch(f: any) {
-  fetchCustomers().then(() => {
-    customersList.value = customersList.value.filter(item => {
-      const matchId = !f.id || item.id.includes(f.id)
-      const matchName = !f.name || item.name.includes(f.name)
-      const matchStatus = !f.status || item.status === f.status
-      const matchDate = !f.registeredAt || item.registeredAt.startsWith(f.registeredAt)
-      return matchId && matchName && matchStatus && matchDate
-    })
-  })
+function handleSearch() {
+  page.value = 1
+  fetchCustomersList()
 }
 
 function handleReset() {
   filter.value = { id: '', name: '', status: '', registeredAt: '' }
-  fetchCustomers()
+  page.value = 1
+  fetchCustomersList()
 }
 
 function openAddDialog() {
@@ -227,7 +236,7 @@ async function handleDialogSubmit(form: any) {
       await addCustomer(submitData)
       ElMessage.success('客户添加成功')
     }
-    fetchCustomers()
+    fetchCustomersList()
     showDialog.value = false
     resetDialogForm()
   } catch (e) {
@@ -246,20 +255,20 @@ function handleDelete(row: any) {
     type: 'warning',
   }).then(() => {
     deleteCustomer(row.id).then(() => {
-      fetchCustomers()
+      fetchCustomersList()
     })
   })
 }
 
-function handlePageChange(val) {
-  page.value = val
-  fetchCustomers()
+function handlePageChange(newPage: number) {
+  page.value = newPage
+  fetchCustomersList()
 }
 
-function handlePageSizeChange(val) {
-  pageSize.value = val
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize
   page.value = 1
-  fetchCustomers()
+  fetchCustomersList()
 }
 
 function handleView(row) {

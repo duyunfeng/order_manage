@@ -21,6 +21,7 @@
       <BaseTable
         :tableData="ordersList"
         :columns="columns"
+        :loading="isLoading"
         :pagination="{ page: page, pageSize: pageSize, total: total }"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
@@ -112,7 +113,7 @@
             :before-remove="(file, fileList) => handleContractRemove(file, fileList)"
             :auto-upload="true"
             :limit="1"
-            action="/api/upload"
+            action="upload"
             accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           >
             <el-button type="primary">上传合同</el-button>
@@ -245,6 +246,7 @@ const total = ref(0)
 
 const showDetail = ref(false)
 const detailData = ref(null)
+const isLoading = ref(false)
 
 const contractUploader = ref(null)
 
@@ -261,13 +263,22 @@ onBeforeUnmount(() => {
 })
 
 async function fetchOrders() {
-  const res = await getOrders({ ...filter.value, page: page.value, pageSize: pageSize.value })
-  ordersList.value = (res.data || res).map((item: any) => ({
-    ...item,
-    createdAt: item.createdAt || '',
-    updatedAt: item.updatedAt || '',
-  }))
-  total.value = res.data.total || 0
+  isLoading.value = true
+  try {
+    const params = {
+      page: page.value,
+      pageSize: pageSize.value,
+      ...filter.value,
+    }
+    const res = await getOrders(params)
+    ordersList.value = res.data
+    total.value = res.total
+  } catch (error) {
+    console.error('Failed to fetch orders:', error)
+    ElMessage.error('获取订单列表失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 function handleSearch(f: any) {
@@ -284,6 +295,7 @@ function handleSearch(f: any) {
 
 function handleReset() {
   filter.value = { id: '', customer: '', status: '', createdAt: '' }
+  page.value = 1
   fetchOrders()
 }
 
@@ -407,12 +419,12 @@ function downloadFile(url: string) {
   document.body.removeChild(a)
 }
 
-function handlePageChange(val) {
-  page.value = val
+function handlePageChange(newPage: number) {
+  page.value = newPage
   fetchOrders()
 }
-function handlePageSizeChange(val) {
-  pageSize.value = val
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize
   page.value = 1
   fetchOrders()
 }

@@ -12,7 +12,12 @@
           </div>
         </el-descriptions-item>
         <el-descriptions-item label="金额">{{ order.amount }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ order.status }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag v-if="order.status === 'pending'" type="warning">待支付</el-tag>
+          <el-tag v-else-if="order.status === 'processing'" type="primary">处理中</el-tag>
+          <el-tag v-else-if="order.status === 'paid'" type="success">已支付</el-tag>
+          <el-tag v-else-if="order.status === 'cancelled'" type="danger">已取消</el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="船期">{{ order.shippingDate }}</el-descriptions-item>
         <el-descriptions-item label="合同文件">
           <el-link v-if="order.contractUrl" :href="order.contractUrl" target="_blank"

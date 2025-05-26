@@ -2,28 +2,55 @@
   <el-row justify="center" style="margin-top: 40px">
     <el-col :span="12">
       <el-card class="profile-card">
-        <div style="display: flex; align-items: center">
-          <el-avatar :size="64" style="margin-right: 24px">
-            <template v-if="user.avatar">
-              <img :src="user.avatar" style="width: 64px; height: 64px; object-fit: cover" />
+        <template v-if="isLoading">
+          <el-skeleton :rows="5" animated>
+            <template #template>
+              <div style="display: flex; align-items: center">
+                <el-skeleton-item
+                  variant="avatar"
+                  style="width: 64px; height: 64px; margin-right: 24px"
+                />
+                <div style="flex: 1">
+                  <el-skeleton-item variant="h3" style="width: 30%" />
+                  <el-skeleton-item variant="text" style="margin-top: 8px; width: 50%" />
+                  <el-skeleton-item variant="text" style="margin-top: 8px; width: 60%" />
+                  <el-skeleton-item variant="text" style="margin-top: 8px; width: 40%" />
+                </div>
+              </div>
+              <div style="margin-top: 24px; display: flex">
+                <el-skeleton-item
+                  variant="button"
+                  style="width: 100px; height: 32px; margin-right: 16px"
+                />
+                <el-skeleton-item variant="button" style="width: 100px; height: 32px" />
+              </div>
             </template>
-            <template v-else>
-              <i class="el-icon-user"></i>
-            </template>
-          </el-avatar>
-          <div>
-            <h2>{{ user.username }}</h2>
-            <p>角色：{{ user.role }}</p>
-            <p>邮箱：{{ user.email }}</p>
-            <p>状态：{{ statusMap[user.status] }}</p>
+          </el-skeleton>
+        </template>
+        <template v-else>
+          <div style="display: flex; align-items: center">
+            <el-avatar :size="64" style="margin-right: 24px">
+              <template v-if="user.avatar">
+                <img :src="user.avatar" style="width: 64px; height: 64px; object-fit: cover" />
+              </template>
+              <template v-else>
+                <i class="el-icon-user"></i>
+              </template>
+            </el-avatar>
+            <div>
+              <h2>{{ user.username }}</h2>
+              <p>角色：{{ user.role }}</p>
+              <p>邮箱：{{ user.email }}</p>
+              <p>状态：{{ statusMap[user.status] }}</p>
+            </div>
           </div>
-        </div>
-        <div style="margin-top: 24px">
-          <el-button type="primary" @click="openEdit">编辑资料</el-button>
-          <el-button type="warning" @click="showPwd = true" style="margin-left: 16px"
-            >修改密码</el-button
-          >
-        </div>
+          <div style="margin-top: 24px">
+            <el-button type="primary" @click="openEdit">编辑资料</el-button>
+            <el-button type="warning" @click="showPwd = true" style="margin-left: 16px"
+              >修改密码</el-button
+            >
+          </div>
+        </template>
       </el-card>
     </el-col>
   </el-row>
@@ -60,18 +87,19 @@ import ImageUpload from '@/components/ImageUpload.vue'
 import { uploadFile } from '@/api/upload'
 import BaseDialogForm from '@/components/BaseDialogForm.vue'
 
+const isLoading = ref(true)
 const statusMap = {
   active: '正常',
   inactive: '禁用',
 }
 const userStore = useUserStore()
 const user = ref({
-  id: '',
-  username: '',
-  role: '',
-  email: '',
-  status: '',
-  avatar: '',
+  id: userStore.user?.id || '',
+  username: userStore.user?.username || '',
+  role: userStore.user?.role || '',
+  email: userStore.user?.email || '',
+  status: userStore.user?.status || '',
+  avatar: userStore.user?.avatar || '',
 })
 
 const showEdit = ref(false)
@@ -182,11 +210,19 @@ const pwdFields = [
 ]
 
 async function fetchUser() {
-  // 实际项目应从登录信息获取当前用户id
-  const res = await getUser(userStore.user.id)
-  console.log(res.data)
-  Object.assign(user.value, res.data || res)
-  console.log(user)
+  isLoading.value = true
+  try {
+    // 实际项目应从登录信息获取当前用户id
+    const res = await getUser(userStore.user.id)
+    console.log(res.data)
+    Object.assign(user.value, res.data || res)
+    console.log(user)
+  } catch (error) {
+    console.error('Failed to fetch user data:', error)
+    ElMessage.error('获取用户信息失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 onMounted(fetchUser)
 

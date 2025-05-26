@@ -8,8 +8,8 @@
         <el-descriptions-item label="地址">{{ customer.address }}</el-descriptions-item>
         <el-descriptions-item label="邮箱">{{ customer.email }}</el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag :type="customer.status === '正常' ? 'success' : 'info'">
-            {{ customer.status }}
+          <el-tag :type="customer.status === 'active' ? 'success' : 'info'">
+            {{ customer.status === 'active' ? '正常' : '禁用' }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="注册时间">{{
