@@ -5,10 +5,9 @@ import { ElMessage } from 'element-plus'
 
 // 创建 axios 实例
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: '/api',
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
 })

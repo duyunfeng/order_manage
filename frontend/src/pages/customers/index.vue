@@ -210,7 +210,7 @@ function resetDialogForm() {
     name: '',
     phone: '',
     address: '',
-    status: '正常',
+    status: 'active',
     registeredAt: '',
     _id: undefined,
   }

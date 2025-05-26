@@ -39,18 +39,31 @@
           </div>
         </template>
         <template #image="{ row }">
-          <img
+          <div
             style="
               width: 48px;
               height: 48px;
-              object-fit: cover;
-              border-radius: 4px;
-              border: 1px solid #eee;
-              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
             "
-            :src="row.image"
-            @click="openImagePreview(row.image)"
-          />
+          >
+            <img
+              v-if="row.image"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #eee;
+                cursor: pointer;
+              "
+              :src="row.image"
+              @click="openImagePreview(row.image)"
+              alt="商品图片"
+            />
+            <span v-else style="font-size: 12px; color: #999"> 暂无图片 </span>
+          </div>
         </template>
         <template #factories="{ row }">
           <el-tag

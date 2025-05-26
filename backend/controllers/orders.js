@@ -21,7 +21,8 @@ export async function listOrders(req, res) {
 }
 
 export async function createOrder(req, res) {
-  const data = { ...req.body, createdAt: new Date(), updatedAt: new Date() }
+  const id = req.body.id || `ORDER_${Date.now()}`;
+  const data = { ...req.body, id, createdAt: new Date(), updatedAt: new Date() };
   const order = await prisma.order.create({ data })
   res.json({ code: 0, data: order })
 }

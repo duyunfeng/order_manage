@@ -13,15 +13,16 @@
         <el-button type="primary" @click="openAddDialog">添加用户</el-button>
       </div>
       <BaseFilter
+        v-if="filterFields.length"
         v-model:modelValue="filter"
         :fields="filterFields"
         @search="handleSearch"
         @reset="handleReset"
       />
       <BaseTable
+        v-if="columns.length"
         :tableData="usersList"
         :columns="columns"
-        :pagination="{ page: page, pageSize: pageSize, total: total }"
         @update:page="handlePageChange"
         @update:pageSize="handlePageSizeChange"
         @edit="handleEdit"
@@ -34,22 +35,26 @@
         </template>
       </BaseTable>
       <BaseDialogForm
+        v-if="addFields.length"
         v-model:modelValue="showDialog"
         :title="isEdit ? '编辑用户' : '添加用户'"
         :fields="addFields"
         :formData="dialogForm"
         @submit="handleDialogSubmit"
         @update:modelValue="
-          val => {
+          (val: boolean) => {
             if (!val) resetDialogForm()
           }
         "
       >
         <template #avatar="{ form }">
-          <ImageUpload v-model="form.avatar" @file-change="file => (form.avatarFile = file)" />
+          <ImageUpload
+            v-model="form.avatar"
+            @file-change="(file: File | null) => (form.avatarFile = file)"
+          />
         </template>
       </BaseDialogForm>
-      <UserDetail v-if="showDetail" v-model="showDetail" :user="detailData" />
+      <UserDetail v-if="showDetail && detailData" v-model="showDetail" :user="detailData" />
     </div>
   </el-card>
 </template>
@@ -64,12 +69,81 @@ import UserDetail from '@/components/UserDetail.vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { getUsers, addUser, updateUser, deleteUser } from '@/api/users'
 
-const statusMap = {
+interface User {
+  id: string | number
+  username: string
+  name?: string
+  role: string
+  email?: string
+  avatar?: string
+  avatarFile?: File | null
+  status: 'active' | 'inactive'
+  createdAt?: string
+  updatedAt?: string
+  _id?: string | number
+  password?: string
+  [key: string]: any
+}
+
+interface FieldConfig {
+  prop: string
+  label: string
+  type: 'input' | 'select' | 'date' | 'custom-upload'
+  placeholder?: string
+  options?: Array<{ label: string; value: string | number | boolean }>
+  valueFormat?: string
+  rules?: Array<any>
+  validator?: (rule: any, value: any, callback: (error?: Error) => void) => void
+  [key: string]: any
+}
+
+interface ColumnConfig {
+  prop: string
+  label: string
+  width?: number | string
+  minWidth?: number | string
+  slot?: boolean
+  getActions?: (
+    row: User,
+    index: number,
+  ) => Array<{
+    label: string
+    type?: 'primary' | 'danger' | 'warning' | 'success' | 'info' | 'default'
+    onClick: (row: User) => void
+  }>
+  [key: string]: any
+}
+
+const statusMap: Record<string, string> = {
   active: '正常',
   inactive: '禁用',
 }
-const filter = ref({ id: '', username: '', status: '', registeredAt: '' })
-const filterFields = [
+const filter = ref<Record<string, any>>({ id: '', username: '', status: '', registeredAt: '' })
+const usersList = ref<User[]>([])
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
+const showDialog = ref(false)
+const isEdit = ref(false)
+const dialogForm = ref<Partial<User>>({
+  username: '',
+  name: '',
+  role: '',
+  email: '',
+  avatar: '',
+  avatarFile: null,
+  status: 'active',
+  _id: undefined,
+})
+const showDetail = ref(false)
+const detailData = ref<User | null>(null)
+
+const roleMap: Record<string, string> = {
+  admin: '管理员',
+  operator: '操作员',
+}
+
+const filterFields = ref<FieldConfig[]>([
   { prop: 'id', label: '用户ID', placeholder: '请输入用户ID', type: 'input' },
   { prop: 'username', label: '用户名', placeholder: '请输入用户名', type: 'input' },
   {
@@ -90,22 +164,9 @@ const filterFields = [
     placeholder: '请选择注册时间',
     valueFormat: 'YYYY-MM-DD',
   },
-]
+])
 
-const showDialog = ref(false)
-const isEdit = ref(false)
-const dialogForm = ref({
-  username: '',
-  name: '',
-  role: '',
-  email: '',
-  avatar: '',
-  avatarFile: null,
-  status: 'active',
-  _id: undefined,
-})
-
-const addFields = [
+const addFields = ref<FieldConfig[]>([
   {
     prop: 'username',
     label: '用户名',
@@ -126,9 +187,12 @@ const addFields = [
   {
     prop: 'role',
     label: '角色',
-    type: 'input',
-    placeholder: '角色不可修改',
-    disabled: true,
+    type: 'select',
+    placeholder: '请选择角色',
+    options: [
+      { label: '管理员', value: 'admin' },
+      { label: '操作员', value: 'operator' },
+    ],
     rules: [{ required: true, message: '必填' }],
   },
   { prop: 'email', label: '邮箱', type: 'input', placeholder: '请输入邮箱' },
@@ -149,9 +213,9 @@ const addFields = [
     ],
     rules: [{ required: true, message: '必填' }],
   },
-]
+])
 
-const columns = [
+const columns = ref<ColumnConfig[]>([
   { prop: 'id', label: '用户ID', width: 200 },
   { prop: 'username', label: '用户名', width: 120 },
   { prop: 'name', label: '昵称', width: 120 },
@@ -165,70 +229,72 @@ const columns = [
     label: '操作',
     minWidth: 240,
     slot: true,
-    getActions: (row: any, index: any) => [
+    getActions: (row: User, index: number) => [
       {
         label: '查看',
-        onClick: (row: any) => handleView(row),
+        onClick: (rowCb: User) => handleView(rowCb),
       },
       {
         label: '编辑',
         type: 'primary',
-        onClick: (row: any) => handleEdit(row),
+        onClick: (rowCb: User) => handleEdit(rowCb),
       },
       {
         label: '删除',
         type: 'danger',
-        onClick: (row: any) => handleDelete(row),
+        onClick: (rowCb: User) => handleDelete(rowCb),
       },
       {
         label: '重置密码',
         type: 'warning',
-        onClick: (row: any) => handleResetPassword(row),
+        onClick: (rowCb: User) => handleResetPassword(rowCb),
       },
     ],
   },
-]
-
-const usersList = ref([])
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const showDetail = ref(false)
-const detailData = ref(null)
-
-const roleMap = {
-  admin: '管理员',
-  operator: '操作员',
-}
+])
 
 onMounted(fetchUsers)
 
 async function fetchUsers() {
-  // 使用API函数获取用户列表数据
-  const res = await getUsers({ ...filter.value, page: page.value, pageSize: pageSize.value })
-  usersList.value = (res.data || res).map((item: any) => ({
-    ...item,
-    role: roleMap[item.role] || item.role,
-    createdAt: item.createdAt || '',
-    updatedAt: item.updatedAt || '',
-  }))
-  total.value = res.data.total || 0
+  try {
+    const res = await getUsers({ ...filter.value, page: page.value, pageSize: pageSize.value })
+    const usersData = res.data?.list || res.data || res || []
+    const totalCount = res.data?.total || usersData.length
+
+    usersList.value = usersData.map((item: any) => ({
+      ...item,
+      role: roleMap[item.role as string] || item.role,
+      createdAt: item.createdAt || '',
+      updatedAt: item.updatedAt || '',
+    }))
+    total.value = totalCount
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+    ElMessage.error('获取用户列表失败')
+    usersList.value = []
+    total.value = 0
+  }
 }
 
-function handleSearch(f: any) {
-  fetchUsers().then(() => {
-    usersList.value = usersList.value.filter((item: any) => {
-      const matchId = !f.id || item.id.includes(f.id)
-      const matchUsername = !f.username || item.username.includes(f.username)
-      const matchStatus = !f.status || item.status === f.status
-      const matchDate = !f.registeredAt || item.registeredAt.startsWith(f.registeredAt)
-      return matchId && matchUsername && matchStatus && matchDate
-    })
-  })
+function handleSearch(filters: Record<string, any>) {
+  page.value = 1
+  fetchUsers()
 }
 
 function handleReset() {
   filter.value = { id: '', username: '', status: '', registeredAt: '' }
+  page.value = 1
+  fetchUsers()
+}
+
+function handlePageChange(newPage: number) {
+  page.value = newPage
+  fetchUsers()
+}
+
+function handlePageSizeChange(newPageSize: number) {
+  pageSize.value = newPageSize
+  page.value = 1
   fetchUsers()
 }
 
@@ -238,7 +304,7 @@ function openAddDialog() {
   showDialog.value = true
 }
 
-function openEditDialog(row: any) {
+function openEditDialog(row: User) {
   isEdit.value = true
   dialogForm.value = { ...row, _id: row.id, avatarFile: null }
   showDialog.value = true
@@ -257,52 +323,69 @@ function resetDialogForm() {
   }
 }
 
-async function handleDialogSubmit(form: any) {
+async function handleDialogSubmit(form: Partial<User>) {
   let avatarUrl = form.avatar
   if (form.avatarFile) {
-    avatarUrl = await uploadFile(form.avatarFile)
+    console.warn('uploadFile function is not implemented yet')
+    avatarUrl = form.avatarFile ? URL.createObjectURL(form.avatarFile) : ''
   }
   const submitData = { ...form, avatar: avatarUrl }
   delete submitData._id
+  delete submitData.avatarFile
+
   try {
     if (isEdit.value) {
-      await updateUser(form._id, submitData)
+      if (!form.id) {
+        ElMessage.error('用户ID不存在，无法编辑')
+        return
+      }
+      await updateUser(form.id, submitData as User)
       ElMessage.success('用户编辑成功')
     } else {
       const password = generateRandomPassword()
-      await addUser({ ...submitData, password })
+      await addUser({ ...submitData, password } as User)
       showPasswordTip(password, '用户添加成功，初始密码为：')
     }
     fetchUsers()
     showDialog.value = false
     resetDialogForm()
   } catch (e) {
+    console.error('Dialog submit error:', e)
     ElMessage.error('操作失败，请重试')
   }
 }
 
-function handleView(row: any) {
+function handleView(row: User) {
   detailData.value = row
   showDetail.value = true
 }
 
-function handleEdit(row: any) {
+function handleEdit(row: User) {
   openEditDialog(row)
 }
 
-function handleDelete(row: any) {
+function handleDelete(row: User) {
   ElMessageBox.confirm(`确定要删除用户：${row.username} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    deleteUser(row.id).then(() => {
-      fetchUsers()
-    })
   })
+    .then(async () => {
+      try {
+        await deleteUser(row.id as string)
+        ElMessage.success('用户删除成功')
+        fetchUsers()
+      } catch (error) {
+        console.error('Delete user error:', error)
+        ElMessage.error('删除失败，请重试')
+      }
+    })
+    .catch(() => {
+      ElMessage.info('已取消删除')
+    })
 }
 
-function generateRandomPassword(length = 10) {
+function generateRandomPassword(length = 10): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
   let pwd = ''
   for (let i = 0; i < length; i++) {
@@ -311,34 +394,42 @@ function generateRandomPassword(length = 10) {
   return pwd
 }
 
-async function handleResetPassword(row: any) {
+async function handleResetPassword(row: User) {
   const password = generateRandomPassword()
-  await updateUser(row.id, { password })
-  showPasswordTip(password)
+  try {
+    await updateUser(row.id as string, { password } as Partial<User>)
+    showPasswordTip(password)
+  } catch (error) {
+    console.error('Reset password error:', error)
+    ElMessage.error('重置密码失败')
+  }
 }
 
-async function validateGithubUsername(rule: any, value: any, callback: any) {
+async function validateGithubUsername(rule: any, value: string, callback: (error?: Error) => void) {
   if (!value) {
     return callback(new Error('用户名不能为空'))
   }
-  // GitHub 用户名正则
   const githubUsernameReg = /^(?!-)(?!.*--)[a-zA-Z0-9-]{1,39}(?<!-)$/
   if (!githubUsernameReg.test(value)) {
     return callback(
       new Error('用户名仅支持字母、数字、单个"-",不能以"-"开头/结尾，不能连续"-",长度1-39'),
     )
   }
-  // 异步唯一性校验
-  const res = await getUsers({ username: value })
-  if (res.data && res.data.length > 0) {
-    // 如果是编辑，允许和自己重名
-    const editingId = dialogForm.value._id
-    const exist = res.data.find(u => u.id !== editingId)
-    if (exist) {
-      return callback(new Error('用户名已存在'))
+  try {
+    const res = await getUsers({ username: value })
+    const usersData = res.data?.list || res.data || res || []
+    if (usersData && usersData.length > 0) {
+      const editingId = dialogForm.value._id || dialogForm.value.id
+      const exist = usersData.find((u: User) => u.id !== editingId && u.username === value)
+      if (exist) {
+        return callback(new Error('用户名已存在'))
+      }
     }
+    callback()
+  } catch (error) {
+    console.error('Error validating username:', error)
+    callback(new Error('验证用户名时出错，请重试'))
   }
-  callback()
 }
 
 function showPasswordTip(password: string, msg = '密码已重置，新的初始密码为：') {
@@ -352,26 +443,13 @@ function showPasswordTip(password: string, msg = '密码已重置，新的初始
   )
 }
 
-async function uploadFile(file: File) {
-  // 实现文件上传逻辑
-  // 这里应该返回上传后的文件URL
-  return URL.createObjectURL(file)
-}
-
-function validateUsername(rule: any, value: any, callback: any) {
-  // ... existing code ...
-}
-
-function validateEmail(rule: any, value: any, callback: any) {
-  // ... existing code ...
-}
-
-function validatePassword(rule: any, value: any, callback: any) {
-  // ... existing code ...
-}
-
-function uploadAvatar(u: any) {
-  // ... existing code ...
+async function uploadFile(file: File): Promise<string> {
+  console.warn('uploadFile function is a placeholder and not fully implemented.')
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(URL.createObjectURL(file))
+    }, 500)
+  })
 }
 </script>
 

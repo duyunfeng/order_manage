@@ -25,7 +25,8 @@ export async function listCustomers(req, res) {
 }
 
 export async function createCustomer(req, res) {
-  const data = { ...req.body, createdAt: new Date(), updatedAt: new Date() }
+  const id = req.body.id || `CUSTOMER_${Date.now()}`;
+  const data = { ...req.body, id, createdAt: new Date(), updatedAt: new Date() };
   const customer = await prisma.customer.create({ data })
   res.json({ code: 0, data: customer })
 }

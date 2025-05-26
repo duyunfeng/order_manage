@@ -26,9 +26,15 @@ export async function listFactories(req, res) {
 }
 
 export async function createFactory(req, res) {
-  const data = { ...req.body, createdAt: new Date(), updatedAt: new Date() }
-  const factory = await prisma.factory.create({ data })
-  res.json({ code: 0, data: factory })
+  try {
+    const id = req.body.id || `FACTORY_${Date.now()}`;
+    const data = { ...req.body, id, createdAt: new Date(), updatedAt: new Date() };
+    const factory = await prisma.factory.create({ data });
+    res.json({ code: 0, data: factory });
+  } catch (error) {
+    console.error("Error creating factory:", error);
+    res.status(500).json({ code: -1, message: "Failed to create factory", error: error.message });
+  }
 }
 
 export async function getFactoryById(req, res) {

@@ -104,13 +104,12 @@
         </template>
         <template #contractUrl="{ form }">
           <el-upload
+            ref="contractUploader"
             :file-list="form.contractFileList"
             :show-file-list="true"
-            :on-success="
-              (res, file, fileList) => handleContractUploadSuccess(res, file, fileList, form)
-            "
-            :on-preview="file => $options.handleContractPreview(file, form)"
-            :before-remove="(file, fileList) => $options.handleContractRemove(file, fileList, form)"
+            :on-success="(res, file, fileList) => handleContractUploadSuccess(res, file, fileList)"
+            :on-preview="file => handleContractPreview(file)"
+            :before-remove="(file, fileList) => handleContractRemove(file, fileList)"
             :auto-upload="true"
             :limit="1"
             action="/api/upload"
@@ -123,6 +122,9 @@
               >已上传</span
             >
           </el-upload>
+        </template>
+        <template #actions>
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
         </template>
       </BaseDialogForm>
       <el-dialog
@@ -154,7 +156,7 @@ declare global {
     __vueDownloadContractFile?: (url: string) => void
   }
 }
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, reactive } from 'vue'
 import BaseFilter from '@/components/BaseFilter.vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import BaseDialogForm from '@/components/BaseDialogForm.vue'
@@ -201,7 +203,7 @@ const dialogForm = ref({
   customer: '',
   goodsList: [{ name: '', quantity: 1 }],
   amount: null,
-  status: '待支付',
+  status: 'pending',
   shippingDate: '',
   contractUrl: '',
   contractFileList: [],
@@ -230,7 +232,7 @@ function goodsSearch(query: any) {
 
 async function fetchCustomers() {
   const res = await getCustomers()
-  customerOptions.value = (res.data || []).filter((item: any) => item.status === '正常')
+  customerOptions.value = (res.data || []).filter((item: any) => item.status === 'active')
 }
 async function fetchGoods() {
   const res = await getGoods()
@@ -243,6 +245,8 @@ const total = ref(0)
 
 const showDetail = ref(false)
 const detailData = ref(null)
+
+const contractUploader = ref(null)
 
 onMounted(() => {
   fetchOrders()
@@ -283,22 +287,23 @@ function handleReset() {
   fetchOrders()
 }
 
-function handleContractUploadSuccess(res: any, file: any, fileList: any, form: any) {
-  form.contractUrl = res.data.url
-  form.contractFileList = [
-    {
-      name: file.name,
-      url: res.url,
-      status: 'success',
-    },
-  ]
+function handleContractUploadSuccess(res: any, file: any, fileList: any) {
+  if (res.code === 0) {
+    ElMessage.success('上传成功')
+    dialogForm.value.contractUrl = res.data.url
+    dialogForm.value.contractFileList = fileList
+  } else {
+    ElMessage.error(res.message || '上传失败')
+  }
 }
-function handleContractPreview(file: any, form: any) {
+
+function handleContractPreview(file: any) {
   previewContractFile(file.url)
 }
-function handleContractRemove(file: any, fileList: any, form: any) {
-  form.contractUrl = ''
-  form.contractFileList = []
+
+function handleContractRemove(file: any, fileList: any) {
+  dialogForm.value.contractUrl = ''
+  dialogForm.value.contractFileList = fileList
 }
 
 function openAddDialog() {
@@ -322,7 +327,7 @@ function resetDialogForm() {
     customer: '',
     goodsList: [{ name: '', quantity: 1 }],
     amount: null,
-    status: '待支付',
+    status: 'pending',
     shippingDate: '',
     contractUrl: '',
     contractFileList: [],
@@ -330,8 +335,9 @@ function resetDialogForm() {
   }
 }
 async function handleDialogSubmit(form: any) {
-  const submitData = { ...form }
+  const submitData = { ...form, amount: Number(form.amount) }
   delete submitData._id
+  console.log(form.contractFileList)
   try {
     if (isEdit.value) {
       await updateOrder(form._id, submitData)
@@ -508,6 +514,11 @@ const columns = [
     ],
   },
 ]
+
+function handleSubmit() {
+  // 只做表单校验和提交
+  handleDialogSubmit(dialogForm.value)
+}
 
 // expose 相关方法，确保 template 可访问
 defineExpose({ handleContractPreview, handleContractRemove })

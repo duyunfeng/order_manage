@@ -89,7 +89,7 @@ const dialogForm = ref({
   address: '',
   manager: '',
   phone: '',
-  status: '正常',
+  status: 'active',
   _id: undefined,
 })
 
@@ -199,7 +199,7 @@ function resetDialogForm() {
     address: '',
     manager: '',
     phone: '',
-    status: '正常',
+    status: 'active',
     _id: undefined,
   }
 }
