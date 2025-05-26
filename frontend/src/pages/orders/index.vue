@@ -382,32 +382,36 @@ function handleDelete(row: any) {
   })
 }
 
-function previewContractFile(url: string) {
-  console.log(url)
-  const preview = getPreviewUrl(url)
-  if (!preview) {
-    ElMessageBox.alert('暂不支持预览该类型文件，请下载后查看', '提示')
-    previewUrl.value = ''
+async function previewContractFile(url: string) {
+  const ext = url.split('.').pop()?.toLowerCase()
+  if (ext === 'pdf') {
+    previewUrl.value = url
     previewDialogVisible.value = true
     downloadUrl.value = url
     return
   }
-  previewUrl.value = preview
-  previewDialogVisible.value = true
-  downloadUrl.value = url
-}
-
-function getPreviewUrl(url: string): string {
-  if (!url) return ''
-  const ext = url.split('.').pop()?.toLowerCase()
-  if (ext === 'pdf') {
-    return url
-  }
-  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']
+  const officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
   if (officeExts.includes(ext)) {
-    return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+    const filename = url.split('/').pop()
+    try {
+      const res = await fetch('/api/convert/to-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename }),
+      }).then(r => r.json())
+      if (res.url) {
+        previewUrl.value = res.url
+        previewDialogVisible.value = true
+        downloadUrl.value = res.url
+      } else {
+        ElMessageBox.alert('文件转换失败，请下载后查看', '提示')
+      }
+    } catch (e) {
+      ElMessageBox.alert('文件转换失败，请下载后查看', '提示')
+    }
+    return
   }
-  return ''
+  ElMessageBox.alert('暂不支持预览该类型文件，请下载后查看', '提示')
 }
 
 function downloadFile(url: string) {

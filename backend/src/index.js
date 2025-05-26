@@ -12,6 +12,7 @@ import uploadRouter from '../routes/upload.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import pkg from '@prisma/client'
+import convertRouter from '../routes/convert.js'
 const { PrismaClient } = pkg
 // 你可以按需引入其他路由
 
@@ -30,6 +31,7 @@ app.use('/api/orders', ordersRouter)
 app.use('/api/customers', customersRouter)
 app.use('/api/factories', factoriesRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/convert', convertRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
