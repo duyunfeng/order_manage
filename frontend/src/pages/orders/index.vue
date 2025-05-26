@@ -135,7 +135,7 @@
         top="2vh"
         custom-class="preview-dialog"
       >
-        <div class="preview-dialog-flex" style="height: 85vh">
+        <div class="preview-dialog-flex" style="height: 80vh">
           <div class="preview-dialog-body-full" style="height: 100%">
             <iframe
               v-if="previewUrl"
@@ -222,6 +222,7 @@ const ordersList = ref<any[]>([])
 const previewDialogVisible = ref(false)
 const previewUrl = ref('')
 const downloadUrl = ref('')
+const originFileUrl = ref('')
 
 // 客户和商品选项
 const customerOptions = ref<any[]>([])
@@ -389,6 +390,9 @@ function handleDelete(row: any) {
 }
 
 async function previewContractFile(url: string, force = false) {
+  if (!force) {
+    originFileUrl.value = url
+  }
   const loadingInstance = ElLoading.service({ fullscreen: true, text: '加载中...' })
   try {
     const ext = url.split('.').pop()?.toLowerCase()
@@ -563,8 +567,8 @@ function handleSubmit() {
 }
 
 function refreshPreview() {
-  if (downloadUrl.value) {
-    previewContractFile(downloadUrl.value, true)
+  if (originFileUrl.value) {
+    previewContractFile(originFileUrl.value, true)
   }
 }
 
