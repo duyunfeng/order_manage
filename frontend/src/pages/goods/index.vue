@@ -288,10 +288,8 @@ async function fetchGoodsList() {
       ...filter.value,
     }
     const res = await getGoods(params)
-    console.log('VITE_BASE_URL:', import.meta.env.VITE_BASE_URL)
     goodsList.value = res.data.map((item: any) => {
       const imageUrl = `${import.meta.env.VITE_BASE_URL || ''}${item.image}`
-      console.log(`Constructed image URL for item ${item.id}:`, imageUrl)
       return {
         ...item,
         image: imageUrl,

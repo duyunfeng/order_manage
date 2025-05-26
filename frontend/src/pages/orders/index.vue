@@ -356,7 +356,6 @@ function resetDialogForm() {
 async function handleDialogSubmit(form: any) {
   const submitData = { ...form, amount: Number(form.amount) }
   delete submitData._id
-  console.log(form.contractFileList)
   try {
     if (isEdit.value) {
       await updateOrder(form._id, submitData)

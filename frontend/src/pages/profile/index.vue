@@ -214,9 +214,7 @@ async function fetchUser() {
   try {
     // 实际项目应从登录信息获取当前用户id
     const res = await getUser(userStore.user.id)
-    console.log(res.data)
     Object.assign(user.value, res.data || res)
-    console.log(user)
   } catch (error) {
     console.error('Failed to fetch user data:', error)
     ElMessage.error('获取用户信息失败')

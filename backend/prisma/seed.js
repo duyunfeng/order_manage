@@ -22,7 +22,6 @@ async function main() {
         updatedAt: new Date(),
       },
     })
-    console.log('已创建 admin 超级管理员账号，默认密码为 123456')
   } else {
     console.log('admin 用户已存在')
   }

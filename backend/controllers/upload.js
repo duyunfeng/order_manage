@@ -1,5 +1,4 @@
 export async function uploadFile(req, res) {
-  console.log(req.file, req)
   if (!req.file) {
     return res.json({ code: 1, message: '未检测到上传文件' })
   }
