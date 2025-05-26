@@ -268,7 +268,10 @@ async function fetchUsersList() {
       ...filter.value,
     }
     const res = await getUsers(params)
-    usersList.value = res.data
+    usersList.value = res.data.map((user: User) => ({
+      ...user,
+      role: user.role === 'admin' ? '管理员' : '操作员',
+    }))
     total.value = res.total
   } catch (error) {
     console.error('Failed to fetch users:', error)
