@@ -9,12 +9,16 @@ import ordersRouter from '../routes/orders.js'
 import customersRouter from '../routes/customers.js'
 import factoriesRouter from '../routes/factories.js'
 import uploadRouter from '../routes/upload.js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import pkg from '@prisma/client'
 const { PrismaClient } = pkg
 // 你可以按需引入其他路由
 
 const app = express()
 const prisma = new PrismaClient()
+const __filename = fileURLToPath(import.meta.url); // 获取当前文件的完整路径
+const __dirname = path.dirname(__filename); // 获取当前文件所在的目录
 
 app.use(cors())
 app.use(express.json())
