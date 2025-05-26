@@ -113,7 +113,7 @@
             :before-remove="(file, fileList) => handleContractRemove(file, fileList)"
             :auto-upload="true"
             :limit="1"
-            action="upload"
+            action="/api/upload"
             accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           >
             <el-button type="primary">上传合同</el-button>
