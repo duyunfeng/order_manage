@@ -30,6 +30,7 @@ app.use('/api/upload', uploadRouter)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })
 })
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Global error handler (optional but good practice)
 app.use((err, req, res, next) => {

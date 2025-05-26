@@ -288,7 +288,15 @@ async function fetchGoodsList() {
       ...filter.value,
     }
     const res = await getGoods(params)
-    goodsList.value = res.data
+    console.log('VITE_BASE_URL:', import.meta.env.VITE_BASE_URL)
+    goodsList.value = res.data.map((item: any) => {
+      const imageUrl = `${import.meta.env.VITE_BASE_URL || ''}${item.image}`
+      console.log(`Constructed image URL for item ${item.id}:`, imageUrl)
+      return {
+        ...item,
+        image: imageUrl,
+      }
+    })
     total.value = res.total
   } catch (error) {
     console.error('Failed to fetch goods:', error)
