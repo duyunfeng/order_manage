@@ -13,8 +13,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import pkg from '@prisma/client'
 import convertRouter from '../routes/convert.js'
-import categoriesRouter from '../../routes/categories.js'
-import routesRouter from '../../routes/routes.js'
+import categoriesRouter from '../routes/categories.js'
+import routesRouter from '../routes/routes.js'
 const { PrismaClient } = pkg
 // 你可以按需引入其他路由
 
