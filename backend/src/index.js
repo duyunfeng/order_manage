@@ -34,7 +34,7 @@ app.use('/api/customers', customersRouter)
 app.use('/api/factories', factoriesRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/convert', convertRouter)
-app.use('/categories', categoriesRouter)
+app.use('/api/categories', categoriesRouter)
 app.use('/api/routes', routesRouter)
 
 app.get('/api/health', (req, res) => {

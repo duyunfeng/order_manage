@@ -36,6 +36,12 @@ export default [
     meta: { layout: 'empty' }
   },
   {
+    path: '/users',
+    name: 'Users',
+    component: () => import('../pages/users/index.vue'),
+    meta: { icon: 'UserFilled', title: '用户管理', index: 98, show: true }
+  },
+  {
     path: '/factories',
     name: 'Factories',
     component: () => import('../pages/factories/index.vue'),
