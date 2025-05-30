@@ -12,7 +12,7 @@ export async function listCategories(req, res) {
 export async function addCategory(req, res) {
   try {
     const { name, description } = req.body
-    const category = await prisma.category.create({ data: { name, description } })
+    const category = await prisma.category.create({ data: { name, description, createdAt: new Date(), updatedAt: new Date() } })
     res.json({ code: 0, data: category })
   } catch (e) {
     res.status(500).json({ code: 1, msg: '添加失败', error: e.message })

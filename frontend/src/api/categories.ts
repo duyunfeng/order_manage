@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from '../plugins/axios'
 
 // 获取所有类目
 export function getCategories() {
