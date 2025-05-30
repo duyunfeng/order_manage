@@ -1,6 +1,6 @@
 <template>
-  <el-dialog :title="title" v-model="visible" width="500px" @close="handleCancel" destroy-on-close>
-    <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+  <el-dialog :title="title" v-model="visible" width="700px" @close="handleCancel" destroy-on-close>
+    <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
       <el-form-item
         v-for="field in fields"
         :key="field.prop"

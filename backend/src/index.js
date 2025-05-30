@@ -13,6 +13,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import pkg from '@prisma/client'
 import convertRouter from '../routes/convert.js'
+import categoriesRouter from '../../routes/categories.js'
+import routesRouter from '../../routes/routes.js'
 const { PrismaClient } = pkg
 // 你可以按需引入其他路由
 
@@ -32,6 +34,8 @@ app.use('/api/customers', customersRouter)
 app.use('/api/factories', factoriesRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/convert', convertRouter)
+app.use('/categories', categoriesRouter)
+app.use('/api/routes', routesRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' })

@@ -9,8 +9,8 @@
           margin-bottom: 16px;
         "
       >
-        <h1>商品管理</h1>
-        <el-button type="primary" @click="openAddDialog">添加商品</el-button>
+        <h1>产品管理</h1>
+        <el-button type="primary" @click="openAddDialog">添加产品</el-button>
       </div>
       <BaseFilter
         v-model:modelValue="filter"
@@ -33,10 +33,14 @@
         <template #spec="{ row }">
           <div>
             <div>
-              长*宽*高：{{ row.spec.length }}*{{ row.spec.width }}*{{ row.spec.height
-              }}{{ (row.spec.unit || 'cm') + '³' }}
+              规格：{{
+                [row.spec.length, row.spec.width, row.spec.height]
+                  .filter(v => v !== undefined && v !== null)
+                  .join('*')
+              }}
+              {{ (row.spec.unit || 'cm') + '³' }}
             </div>
-            <div>颜色：{{ row.spec.color }}</div>
+            <div>颜色：{{ row.spec.color || '-' }}</div>
           </div>
         </template>
         <template #image="{ row }">
@@ -61,7 +65,7 @@
               "
               :src="row.image"
               @click="openImagePreview(row.image)"
-              alt="商品图片"
+              alt="产品图片"
             />
             <span v-else style="font-size: 12px; color: #999"> 暂无图片 </span>
           </div>
@@ -85,7 +89,7 @@
       </BaseTable>
       <BaseDialogForm
         v-model:modelValue="showDialog"
-        :title="isEdit ? '编辑商品' : '添加商品'"
+        :title="isEdit ? '编辑产品' : '添加产品'"
         :fields="addFields"
         :formData="dialogForm"
         @submit="handleDialogSubmit"
@@ -132,8 +136,8 @@ const filter = ref({ id: '', name: '', status: '', createdAt: '' })
  * 筛选项配置，页面维护
  */
 const filterFields = [
-  { prop: 'id', label: '商品ID', placeholder: '请输入商品ID', type: 'input' },
-  { prop: 'name', label: '商品名称', placeholder: '请输入商品名称', type: 'input' },
+  { prop: 'id', label: '产品ID', placeholder: '请输入产品ID', type: 'input' },
+  { prop: 'name', label: '产品名称', placeholder: '请输入产品名称', type: 'input' },
   {
     prop: 'status',
     label: '状态',
@@ -155,16 +159,14 @@ const filterFields = [
 ]
 
 /**
- * 添加商品弹窗相关
+ * 添加产品弹窗相关
  */
 const showDialog = ref(false)
 const isEdit = ref(false)
 const dialogForm = ref({
   name: '',
   price: null,
-  spec_length: null,
-  spec_width: null,
-  spec_height: null,
+  spec_size: '',
   spec_unit: 'cm',
   spec_color: '',
   image: '',
@@ -180,21 +182,25 @@ const factoryOptions = [
 const addFields = [
   {
     prop: 'name',
-    label: '商品名称',
+    label: '产品名称',
     type: 'input',
-    placeholder: '请输入商品名称',
+    placeholder: '请输入产品名称',
     rules: [{ required: true, message: '必填' }],
   },
   {
     prop: 'price',
-    label: '价格($)',
+    label: '价格(￥)',
     type: 'input',
     placeholder: '请输入价格',
     rules: [{ required: true, message: '必填' }],
   },
-  { prop: 'spec_length', label: '长度', type: 'input', placeholder: '请输入长度' },
-  { prop: 'spec_width', label: '宽度', type: 'input', placeholder: '请输入宽度' },
-  { prop: 'spec_height', label: '高度', type: 'input', placeholder: '请输入高度' },
+  {
+    prop: 'spec_size',
+    label: '规格(长*宽*高)',
+    type: 'input',
+    placeholder: '如：10*20*30',
+    rules: [],
+  },
   {
     prop: 'spec_unit',
     label: '单位',
@@ -206,9 +212,9 @@ const addFields = [
   { prop: 'spec_color', label: '颜色', type: 'input', placeholder: '请输入颜色' },
   {
     prop: 'image',
-    label: '商品图片',
+    label: '产品图片',
     type: 'custom-upload',
-    placeholder: '请上传商品图片',
+    placeholder: '请上传产品图片',
   },
   {
     prop: 'factories',
@@ -223,7 +229,7 @@ const addFields = [
  * 表格列配置，页面维护
  */
 const columns = [
-  { prop: 'id', label: '商品ID', width: 200 },
+  { prop: 'id', label: '产品ID', width: 200 },
   { prop: 'name', label: '名称', width: 180 },
   { prop: 'spec', label: '规格', minWidth: 200, slot: true },
   { prop: 'image', label: '图片', width: 120, slot: true },
@@ -262,7 +268,7 @@ const columns = [
 ]
 
 /**
- * 商品列表数据（可替换为API请求）
+ * 产品列表数据（可替换为API请求）
  */
 const goodsList = ref([])
 const imagePreviewVisible = ref(false)
@@ -292,13 +298,14 @@ async function fetchGoodsList() {
       const imageUrl = `${import.meta.env.VITE_BASE_URL || ''}${item.image}`
       return {
         ...item,
+        spec: JSON.parse(item.spec),
         image: imageUrl,
       }
     })
     total.value = res.total
   } catch (error) {
     console.error('Failed to fetch goods:', error)
-    ElMessage.error('获取商品列表失败')
+    ElMessage.error('获取产品列表失败')
   } finally {
     isLoading.value = false
   }
@@ -327,8 +334,8 @@ function handlePageSizeChange(newPageSize: number) {
 }
 
 /**
- * 查看商品详情
- * @param row 当前商品
+ * 查看产品详情
+ * @param row 当前产品
  */
 function handleView(row: any) {
   detailData.value = row
@@ -336,33 +343,46 @@ function handleView(row: any) {
 }
 
 /**
- * 编辑商品
- * @param row 当前商品
+ * 编辑产品
+ * @param row 当前产品
  */
 function handleEdit(row: any) {
   isEdit.value = true
+  // 兼容后端返回 spec 为字符串或对象
+  let specObj = row.spec
+  if (typeof specObj === 'string') {
+    try {
+      specObj = JSON.parse(specObj)
+    } catch {
+      specObj = {}
+    }
+  }
+  // 解析规格字符串
+  let spec_size = ''
+  if (specObj && typeof specObj === 'object') {
+    const { length, width, height } = specObj
+    spec_size = [length, width, height].filter(v => v !== undefined && v !== null).join('*')
+  }
   dialogForm.value = {
     name: row.name,
     price: row.price,
-    spec_length: row.spec.length,
-    spec_width: row.spec.width,
-    spec_height: row.spec.height,
-    spec_color: row.spec.color,
-    spec_unit: row.spec.unit || 'cm',
+    spec_size,
+    spec_color: specObj.color,
+    spec_unit: specObj.unit || 'cm',
     image: row.image,
     imageFile: null,
-    factories: row.factories?.map(f => f.id) || [],
+    factories: row.factories?.map((f: any) => f.id) || [],
     _id: row.id,
   }
   showDialog.value = true
 }
 
 /**
- * 删除商品
- * @param row 当前商品
+ * 删除产品
+ * @param row 当前产品
  */
 function handleDelete(row: any) {
-  ElMessageBox.confirm(`确定要删除商品：${row.name} 吗？`, '提示', {
+  ElMessageBox.confirm(`确定要删除产品：${row.name} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
@@ -374,8 +394,8 @@ function handleDelete(row: any) {
 }
 
 /**
- * 上下架商品
- * @param row 当前商品
+ * 上下架产品
+ * @param row 当前产品
  * @param status 新状态
  */
 function handleToggleStatus(row: any, status: 'on' | 'off') {
@@ -403,17 +423,30 @@ function openAddDialog() {
 
 function openEditDialog(row: any) {
   isEdit.value = true
+  // 兼容后端返回 spec 为字符串或对象
+  let specObj = row.spec
+  if (typeof specObj === 'string') {
+    try {
+      specObj = JSON.parse(specObj)
+    } catch {
+      specObj = {}
+    }
+  }
+  // 解析规格字符串
+  let spec_size = ''
+  if (specObj && typeof specObj === 'object') {
+    const { length, width, height } = specObj
+    spec_size = [length, width, height].filter(v => v !== undefined && v !== null).join('*')
+  }
   dialogForm.value = {
     name: row.name,
     price: row.price,
-    spec_length: row.spec.length,
-    spec_width: row.spec.width,
-    spec_height: row.spec.height,
-    spec_color: row.spec.color,
-    spec_unit: row.spec.unit || 'cm',
+    spec_size,
+    spec_color: specObj.color,
+    spec_unit: specObj.unit || 'cm',
     image: row.image,
     imageFile: null,
-    factories: row.factories?.map(f => f.id) || [],
+    factories: row.factories?.map((f: any) => f.id) || [],
     _id: row.id,
   }
   showDialog.value = true
@@ -423,9 +456,7 @@ function resetDialogForm() {
   dialogForm.value = {
     name: '',
     price: null,
-    spec_length: null,
-    spec_width: null,
-    spec_height: null,
+    spec_size: '',
     spec_unit: 'cm',
     spec_color: '',
     image: '',
@@ -439,14 +470,28 @@ async function handleDialogSubmit(form: any) {
   let imageUrl = form.image
   if (form.imageFile) {
     imageUrl = await uploadFile(form.imageFile)
+  } else if (typeof form.image === 'string' && form.image.startsWith('data:')) {
+    imageUrl = ''
+  }
+  // 修复：去除前缀，只保留相对路径
+  const baseUrl = import.meta.env.VITE_BASE_URL || ''
+  if (imageUrl && baseUrl && imageUrl.startsWith(baseUrl)) {
+    imageUrl = imageUrl.replace(baseUrl, '')
+  }
+  // 解析规格字符串为对象
+  let length = '',
+    width = '',
+    height = ''
+  if (form.spec_size) {
+    ;[length, width, height] = form.spec_size.split('*')
   }
   const goodsData = {
     name: form.name,
     price: Number(form.price),
     spec: JSON.stringify({
-      length: form.spec_length,
-      width: form.spec_width,
-      height: form.spec_height,
+      length,
+      width,
+      height,
       color: form.spec_color,
       unit: form.spec_unit || 'cm',
     }),
@@ -456,12 +501,11 @@ async function handleDialogSubmit(form: any) {
   }
   if (isEdit.value) {
     const submitData = { ...goodsData }
-    delete submitData._id
     await updateGood(form._id, submitData)
-    ElMessage.success('商品编辑成功')
+    ElMessage.success('产品编辑成功')
   } else {
     await addGood(goodsData)
-    ElMessage.success('商品添加成功')
+    ElMessage.success('产品添加成功')
   }
   fetchGoodsList()
   showDialog.value = false

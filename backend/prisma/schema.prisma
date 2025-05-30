@@ -46,6 +46,16 @@ model factory {
   createdAt DateTime @default(now())
   updatedAt DateTime
   goods     GoodFactory[]  // 反向关系字段
+  mainCategories category[] @relation("FactoryMainCategories") // 新增主营类目多对多
+}
+
+model category {
+  id        String   @id @default(uuid())
+  name      String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  factories factory[] @relation("FactoryMainCategories") // 工厂主营类目多对多
 }
 
 model good {
@@ -85,4 +95,17 @@ model user {
   status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime
+}
+
+model route {
+  id        String   @id @default(uuid())
+  path      String
+  name      String
+  title     String
+  icon      String?
+  parentId  String?
+  index     Int?
+  show      Boolean? @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -14,10 +14,22 @@
         :collapse="isCollapse"
         :router="true"
       >
-        <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-          <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
-          <span>{{ item.title }}</span>
-        </el-menu-item>
+        <template v-for="item in menuItems" :key="item.path">
+          <el-sub-menu v-if="item.children" :index="item.path">
+            <template #title>
+              <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+              <span>{{ item.title }}</span>
+            </template>
+            <el-menu-item v-for="sub in item.children" :key="sub.path" :index="sub.path">
+              <el-icon v-if="sub.icon"><component :is="sub.icon" /></el-icon>
+              <span>{{ sub.title }}</span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="item.path">
+            <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.title }}</span>
+          </el-menu-item>
+        </template>
       </el-menu>
     </aside>
     <div class="main-area">
@@ -84,18 +96,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  HomeFilled,
-  ShoppingCart,
-  Document,
-  User,
-  OfficeBuilding,
-  UserFilled,
-  Setting,
-  Menu,
-  Fold,
-  Expand,
-} from '@element-plus/icons-vue'
+import * as Icons from '@element-plus/icons-vue'
+import { Fold, Expand } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 
@@ -114,19 +116,47 @@ const isDarkMode = ref(false)
 const showUserDropdown = ref(false)
 
 const menuItems = computed(() => {
-  const items = [
-    { path: '/', title: '首页', icon: HomeFilled },
-    { path: '/goods', title: '商品管理', icon: ShoppingCart },
-    { path: '/orders', title: '订单管理', icon: Document },
-    { path: '/customers', title: '客户管理', icon: User },
-    { path: '/factories', title: '工厂资料', icon: OfficeBuilding },
-    // 只有admin显示用户管理
-    ...(userStore.user.role === 'admin'
-      ? [{ path: '/users', title: '用户管理', icon: UserFilled }]
-      : []),
-    { path: '/profile', title: '用户资料', icon: Setting },
-  ]
-  return items
+  // 只取一级菜单且show为true，按index排序
+  return router
+    .getRoutes()
+    .filter(
+      route =>
+        route.meta &&
+        route.meta.icon &&
+        route.meta.show !== false &&
+        !route.parent &&
+        route.path !== '/login' &&
+        route.path !== '/:pathMatch(.*)*' &&
+        route.name !== undefined &&
+        // 排除系统设置的子路由被提升为一级菜单
+        route.name !== 'UserSetting' &&
+        route.name !== 'MenuSetting',
+    )
+    .sort((a, b) => (a.meta?.index ?? 0) - (b.meta?.index ?? 0))
+    .map(route => {
+      // 系统设置特殊处理，带children
+      if (route.name === 'SystemSetting' && route.children) {
+        const children = route.children
+          .filter(child => child.meta && child.meta.show !== false)
+          .sort((a, b) => (a.meta?.index ?? 0) - (b.meta?.index ?? 0))
+          .map(child => ({
+            path: route.path + '/' + child.path,
+            title: child.meta?.title || child.name,
+            icon: (Icons as Record<string, any>)[child.meta?.icon] || Icons.Menu,
+          }))
+        return {
+          path: route.path,
+          title: route.meta.title || route.name,
+          icon: (Icons as Record<string, any>)[route.meta.icon] || Icons.Setting,
+          children,
+        }
+      }
+      return {
+        path: route.path,
+        title: route.meta.title || route.name,
+        icon: (Icons as Record<string, any>)[route.meta.icon] || Icons.HomeFilled,
+      }
+    })
 })
 
 const handleLogout = () => {

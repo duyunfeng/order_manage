@@ -33,6 +33,9 @@
             {{ statusMap[row.status] }}
           </el-tag>
         </template>
+        <template #mainCategories="{ row }">
+          <span>{{ row.mainCategories?.map(cat => cat.name).join('，') }}</span>
+        </template>
       </BaseTable>
       <BaseDialogForm
         v-model:modelValue="showDialog"
@@ -55,6 +58,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { getFactories, addFactory, updateFactory, deleteFactory } from '@/api/factories'
+import { getCategories } from '@/api/categories'
 import BaseFilter from '@/components/BaseFilter.vue'
 import BaseTable from '@/components/BaseTable.vue'
 import BaseActions from '@/components/BaseActions.vue'
@@ -66,10 +70,12 @@ const statusMap = {
   inactive: '停用',
 }
 
-const filter = ref({ id: '', name: '', status: '' })
+const filter = ref({ id: '', name: '', status: '', email: '', phone: '' })
 const filterFields = [
   { prop: 'id', label: '工厂ID', placeholder: '请输入工厂ID', type: 'input' },
   { prop: 'name', label: '工厂名称', placeholder: '请输入工厂名称', type: 'input' },
+  { prop: 'email', label: '邮箱', placeholder: '请输入邮箱', type: 'input' },
+  { prop: 'phone', label: '手机号', placeholder: '请输入手机号', type: 'input' },
   {
     prop: 'status',
     label: '状态',
@@ -83,6 +89,8 @@ const filterFields = [
   },
 ]
 
+const categoriesList = ref([])
+
 const showDialog = ref(false)
 const isEdit = ref(false)
 const dialogForm = ref({
@@ -90,6 +98,8 @@ const dialogForm = ref({
   address: '',
   manager: '',
   phone: '',
+  email: '',
+  mainCategories: [],
   status: 'active',
   _id: undefined,
 })
@@ -98,12 +108,16 @@ const addFields = [
   { prop: 'name', label: '工厂名称', type: 'input', placeholder: '请输入工厂名称', required: true },
   { prop: 'address', label: '地址', type: 'input', placeholder: '请输入地址', required: true },
   { prop: 'manager', label: '负责人', type: 'input', placeholder: '请输入负责人', required: true },
+  { prop: 'phone', label: '手机号', type: 'input', placeholder: '请输入手机号', required: true },
+  { prop: 'email', label: '邮箱', type: 'input', placeholder: '请输入邮箱', required: false },
   {
-    prop: 'phone',
-    label: '联系方式',
-    type: 'input',
-    placeholder: '请输入联系方式',
-    required: true,
+    prop: 'mainCategories',
+    label: '主营产品类目',
+    type: 'select',
+    placeholder: '请选择主营产品类目',
+    options: categoriesList.value,
+    multiple: true,
+    required: false,
   },
   {
     prop: 'status',
@@ -123,7 +137,9 @@ const columns = [
   { prop: 'name', label: '工厂名称', width: 120 },
   { prop: 'address', label: '地址', width: 200 },
   { prop: 'manager', label: '负责人', width: 120 },
-  { prop: 'phone', label: '联系方式', width: 140 },
+  { prop: 'phone', label: '手机号', width: 140 },
+  { prop: 'email', label: '邮箱', width: 180 },
+  { prop: 'mainCategories', label: '主营产品类目', width: 200, slot: true },
   { prop: 'status', label: '状态', width: 100, slot: true },
   { prop: 'createdAt', label: '创建时间', width: 160 },
   { prop: 'updatedAt', label: '更新时间', width: 160 },
@@ -159,7 +175,10 @@ const showDetail = ref(false)
 const detailData = ref(null)
 const isLoading = ref(false)
 
-onMounted(fetchFactoriesList)
+onMounted(() => {
+  fetchFactoriesList()
+  fetchCategoriesList()
+})
 
 async function fetchFactoriesList() {
   isLoading.value = true
@@ -180,13 +199,22 @@ async function fetchFactoriesList() {
   }
 }
 
+async function fetchCategoriesList() {
+  try {
+    const res = await getCategories()
+    categoriesList.value = res.data.map(item => ({ label: item.name, value: item.id }))
+  } catch (e) {
+    categoriesList.value = []
+  }
+}
+
 function handleSearch() {
   page.value = 1
   fetchFactoriesList()
 }
 
 function handleReset() {
-  filter.value = { id: '', name: '', status: '' }
+  filter.value = { id: '', name: '', status: '', email: '', phone: '' }
   page.value = 1
   fetchFactoriesList()
 }
@@ -209,6 +237,8 @@ function resetDialogForm() {
     address: '',
     manager: '',
     phone: '',
+    email: '',
+    mainCategories: [],
     status: 'active',
     _id: undefined,
   }

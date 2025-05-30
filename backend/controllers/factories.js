@@ -4,7 +4,7 @@ const { PrismaClient } = pkg
 const prisma = new PrismaClient()
 
 export async function listFactories(req, res) {
-  const { name, contact, phone, address, email, manager, status, page = 1, pageSize = 20 } = req.query
+  const { name, contact, phone, address, email, manager, status, mainCategories, page = 1, pageSize = 20 } = req.query
   const where = {}
   if (name) where.name = { contains: name }
   if (contact) where.contact = { contains: contact }
@@ -13,13 +13,15 @@ export async function listFactories(req, res) {
   if (email) where.email = { contains: email }
   if (manager) where.manager = { contains: manager }
   if (status) where.status = status
+  if (mainCategories) where.mainCategories = { some: { id: { in: Array.isArray(mainCategories) ? mainCategories : [mainCategories] } } }
   const [total, factories] = await Promise.all([
     prisma.factory.count({ where }),
     prisma.factory.findMany({
       where,
       skip: (page - 1) * pageSize,
       take: Number(pageSize),
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: { mainCategories: true },
     })
   ])
   res.json({ code: 0, data: factories, total })
@@ -44,14 +46,45 @@ export async function getFactoryById(req, res) {
 }
 
 export async function updateFactory(req, res) {
-  const { id } = req.params
-  const data = { ...req.body, updatedAt: new Date() }
-  const factory = await prisma.factory.update({ where: { id }, data })
-  res.json({ code: 0, data: factory })
+  try {
+    const { id } = req.params
+    const { name, contact, phone, address, email, manager, status, mainCategories = [] } = req.body
+    const factory = await prisma.factory.update({
+      where: { id },
+      data: {
+        name, contact, phone, address, email, manager, status,
+        mainCategories: {
+          set: mainCategories.map(id => ({ id }))
+        }
+      },
+      include: { mainCategories: true },
+    })
+    res.json({ code: 0, data: factory })
+  } catch (e) {
+    res.status(500).json({ code: 1, msg: '编辑失败', error: e.message })
+  }
 }
 
 export async function deleteFactory(req, res) {
   const { id } = req.params
   await prisma.factory.delete({ where: { id } })
   res.json({ code: 0, message: '删除成功' })
+}
+
+export async function addFactory(req, res) {
+  try {
+    const { name, contact, phone, address, email, manager, status, mainCategories = [] } = req.body
+    const factory = await prisma.factory.create({
+      data: {
+        name, contact, phone, address, email, manager, status,
+        mainCategories: {
+          connect: mainCategories.map(id => ({ id }))
+        }
+      },
+      include: { mainCategories: true },
+    })
+    res.json({ code: 0, data: factory })
+  } catch (e) {
+    res.status(500).json({ code: 1, msg: '添加失败', error: e.message })
+  }
 } 
