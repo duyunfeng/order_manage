@@ -70,7 +70,7 @@ jobs:
 
       - name: Install backend dependencies with pnpm # 安装后端依赖
         working-directory: ./backend # 指向后端的 package.json 目录
-        run: pnpm install --prod # --prod 仅安装生产依赖
+        run: pnpm install --no-frozen-lockfile --prod # --prod 仅安装生产依赖
 
       # 移除或注释掉 'Build backend project (if needed)' 这一步
       # - name: Build backend project (if needed)
