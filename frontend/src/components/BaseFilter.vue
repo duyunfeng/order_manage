@@ -10,7 +10,8 @@
         v-else-if="item.type === 'select'"
         v-model="modelValue[item.prop]"
         :placeholder="item.placeholder"
-        style="width: 140px"
+        :multiple="item.multiple"
+        style="width: 200px"
       >
         <el-option
           v-for="opt in item.options"

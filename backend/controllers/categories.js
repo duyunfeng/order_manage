@@ -24,7 +24,7 @@ export async function updateCategory(req, res) {
   try {
     const { id } = req.params
     const { name, description } = req.body
-    const category = await prisma.category.update({ where: { id }, data: { name, description } })
+    const category = await prisma.category.update({ where: { id }, data: { name, description, updatedAt: new Date() } })
     res.json({ code: 0, data: category })
   } catch (e) {
     res.status(500).json({ code: 1, msg: '编辑失败', error: e.message })

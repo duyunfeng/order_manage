@@ -26,7 +26,16 @@ export async function listCustomers(req, res) {
 
 export async function createCustomer(req, res) {
   const id = req.body.id || `CUSTOMER_${Date.now()}`;
-  const data = { ...req.body, id, createdAt: new Date(), updatedAt: new Date() };
+  const data = {
+    ...req.body,
+    id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    country: req.body.country || '',
+    website: req.body.website || '',
+    establishedAt: req.body.establishedAt || '',
+    contacts: req.body.contacts || [],
+  };
   const customer = await prisma.customer.create({ data })
   res.json({ code: 0, data: customer })
 }
@@ -39,7 +48,14 @@ export async function getCustomerById(req, res) {
 
 export async function updateCustomer(req, res) {
   const { id } = req.params
-  const data = { ...req.body, updatedAt: new Date() }
+  const data = {
+    ...req.body,
+    updatedAt: new Date(),
+    country: req.body.country || '',
+    website: req.body.website || '',
+    establishedAt: req.body.establishedAt || '',
+    contacts: req.body.contacts || [],
+  }
   const customer = await prisma.customer.update({ where: { id }, data })
   res.json({ code: 0, data: customer })
 }

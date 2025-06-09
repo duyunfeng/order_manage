@@ -55,13 +55,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { getFactories, addFactory, updateFactory, deleteFactory } from '@/api/factories'
 import { getCategories } from '@/api/categories'
 import BaseFilter from '@/components/BaseFilter.vue'
 import BaseTable from '@/components/BaseTable.vue'
-import BaseActions from '@/components/BaseActions.vue'
 import BaseDialogForm from '@/components/BaseDialogForm.vue'
 import FactoryDetail from '@/components/FactoryDetail.vue'
 
@@ -70,12 +69,32 @@ const statusMap = {
   inactive: '停用',
 }
 
-const filter = ref({ id: '', name: '', status: '', email: '', phone: '' })
-const filterFields = [
+const categoriesList = ref([])
+
+const filter = ref({
+  id: '',
+  name: '',
+  status: '',
+  email: '',
+  phone: '',
+  mainCategories: [],
+  manager: '',
+})
+const filterFields = computed(() => [
   { prop: 'id', label: '工厂ID', placeholder: '请输入工厂ID', type: 'input' },
   { prop: 'name', label: '工厂名称', placeholder: '请输入工厂名称', type: 'input' },
+  // 联系人
+  { prop: 'manager', label: '联系人', placeholder: '请输入联系人', type: 'input' },
   { prop: 'email', label: '邮箱', placeholder: '请输入邮箱', type: 'input' },
   { prop: 'phone', label: '手机号', placeholder: '请输入手机号', type: 'input' },
+  {
+    prop: 'mainCategories',
+    label: '主营产品类目',
+    placeholder: '请选择主营产品类目',
+    type: 'select',
+    options: categoriesList.value.map((item: any) => ({ label: item.name, value: item.id })),
+    multiple: true,
+  },
   {
     prop: 'status',
     label: '状态',
@@ -87,9 +106,7 @@ const filterFields = [
       { label: '停用', value: 'inactive' },
     ],
   },
-]
-
-const categoriesList = ref([])
+])
 
 const showDialog = ref(false)
 const isEdit = ref(false)
@@ -104,10 +121,22 @@ const dialogForm = ref({
   _id: undefined,
 })
 
-const addFields = [
-  { prop: 'name', label: '工厂名称', type: 'input', placeholder: '请输入工厂名称', required: true },
+const addFields = computed(() => [
+  {
+    prop: 'name',
+    label: '工厂名称',
+    type: 'input',
+    placeholder: '请输入工厂名称',
+    required: true,
+  },
   { prop: 'address', label: '地址', type: 'input', placeholder: '请输入地址', required: true },
-  { prop: 'manager', label: '负责人', type: 'input', placeholder: '请输入负责人', required: true },
+  {
+    prop: 'manager',
+    label: '负责人',
+    type: 'input',
+    placeholder: '请输入负责人',
+    required: true,
+  },
   { prop: 'phone', label: '手机号', type: 'input', placeholder: '请输入手机号', required: true },
   { prop: 'email', label: '邮箱', type: 'input', placeholder: '请输入邮箱', required: false },
   {
@@ -115,7 +144,7 @@ const addFields = [
     label: '主营产品类目',
     type: 'select',
     placeholder: '请选择主营产品类目',
-    options: categoriesList.value,
+    options: categoriesList.value.map(item => ({ label: item.name, value: item.id })),
     multiple: true,
     required: false,
   },
@@ -130,7 +159,7 @@ const addFields = [
     ],
     required: true,
   },
-]
+])
 
 const columns = [
   { prop: 'id', label: '工厂ID', width: 200 },
@@ -202,7 +231,8 @@ async function fetchFactoriesList() {
 async function fetchCategoriesList() {
   try {
     const res = await getCategories()
-    categoriesList.value = res.data.map(item => ({ label: item.name, value: item.id }))
+    categoriesList.value = res.data || res
+    console.log(categoriesList.value)
   } catch (e) {
     categoriesList.value = []
   }

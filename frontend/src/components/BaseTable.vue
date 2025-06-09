@@ -11,6 +11,11 @@
       :scrollbar-always-on="true"
       :show-overflow-tooltip="true"
     >
+      <el-table-column type="expand" v-if="expand">
+        <template #default="scope">
+          <slot name="expand" v-bind="scope" />
+        </template>
+      </el-table-column>
       <el-table-column
         v-for="col in columns"
         :key="col.prop"
@@ -44,7 +49,7 @@
             </div>
           </template>
           <template v-else>
-            <span>{{ scope.row[col.prop] }}</span>
+            <span>{{ col.formatter ? col.formatter(scope.row) : scope.row[col.prop] }}</span>
           </template>
         </template>
       </el-table-column>
@@ -99,6 +104,7 @@ const props = defineProps({
   columns: { type: Array as PropType<TableColumn[]>, default: () => [] },
   pagination: { type: Object as PropType<PaginationConfig | null>, default: null },
   loading: { type: Boolean, default: false },
+  expand: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:page', 'update:pageSize'])

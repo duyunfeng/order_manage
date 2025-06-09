@@ -116,7 +116,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import BaseFilter from '@/components/BaseFilter.vue'
 import BaseTable from '@/components/BaseTable.vue'
 import BaseDialogForm from '@/components/BaseDialogForm.vue'
@@ -124,7 +123,8 @@ import ImageUpload from '@/components/ImageUpload.vue'
 import ImagePreviewer from '@/components/ImagePreviewer.vue'
 import GoodsDetail from '@/components/GoodsDetail.vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { getGoods, getGood, addGood, updateGood, deleteGood } from '@/api/goods'
+import { getGoods, addGood, updateGood, deleteGood } from '@/api/goods'
+import { getFactories } from '@/api/factories'
 import { uploadFile } from '@/api/upload'
 
 /**
@@ -165,7 +165,11 @@ const showDialog = ref(false)
 const isEdit = ref(false)
 const dialogForm = ref({
   name: '',
-  price: null,
+  product_id: '',
+  tw_id: '',
+  price: null, // 产品价格
+  priceCurrency: 'CNY', // 价格币种，默认为人民币
+  factory_price: null,
   spec_size: '',
   spec_unit: 'cm',
   spec_color: '',
@@ -174,12 +178,8 @@ const dialogForm = ref({
   factories: [],
   _id: undefined, // 编辑时用
 })
-const factoryOptions = [
-  { label: '工厂一', value: 'f1' },
-  { label: '工厂二', value: 'f2' },
-  { label: '工厂三', value: 'f3' },
-]
-const addFields = [
+const factoryOptions = ref([])
+const addFields = ref([
   {
     prop: 'name',
     label: '产品名称',
@@ -189,9 +189,28 @@ const addFields = [
   },
   {
     prop: 'price',
-    label: '价格(￥)',
+    label: '价格',
     type: 'input',
     placeholder: '请输入价格',
+    rules: [{ required: true, message: '必填' }],
+  },
+  {
+    prop: 'priceCurrency',
+    label: '币种',
+    type: 'select',
+    placeholder: '请选择币种',
+    options: [
+      { label: '人民币', value: 'CNY' },
+      { label: '美元', value: 'USD' },
+    ],
+    rules: [{ required: true, message: '必选' }],
+    default: 'CNY',
+  },
+  {
+    prop: 'factory_price',
+    label: '工厂价(CNY)',
+    type: 'input',
+    placeholder: '请输入工厂价',
     rules: [{ required: true, message: '必填' }],
   },
   {
@@ -223,19 +242,27 @@ const addFields = [
     placeholder: '请选择工厂',
     options: factoryOptions,
   },
-]
+])
 
 /**
  * 表格列配置，页面维护
  */
 const columns = [
-  { prop: 'id', label: '产品ID', width: 200 },
   { prop: 'name', label: '名称', width: 180 },
+  { prop: 'product_id', label: '产品编号', width: 180 },
+  { prop: 'tw_id', label: 'TW编号', width: 180 },
   { prop: 'spec', label: '规格', minWidth: 200, slot: true },
   { prop: 'image', label: '图片', width: 120, slot: true },
-  { prop: 'price', label: '价格($)', width: 100 },
+  {
+    prop: 'price',
+    label: '价格',
+    width: 120,
+    formatter: row => `${row.price || '-'} ${row.priceCurrency === 'USD' ? '$' : '￥'}`,
+  },
+  { prop: 'factory_price', label: '工厂价(CNY)', width: 120 },
   { prop: 'factories', label: '生产工厂', minWidth: 180, slot: true },
   { prop: 'status', label: '上架状态', width: 100, slot: true },
+  { prop: 'id', label: '产品ID', width: 200 },
   { prop: 'createdAt', label: '创建时间', width: 160 },
   { prop: 'updatedAt', label: '更新时间', width: 160 },
   {
@@ -283,6 +310,7 @@ const isLoading = ref(false)
 
 onMounted(() => {
   fetchGoodsList()
+  fetchFactoryList()
 })
 
 async function fetchGoodsList() {
@@ -309,6 +337,16 @@ async function fetchGoodsList() {
   } finally {
     isLoading.value = false
   }
+}
+
+const fetchFactoryList = async () => {
+  const res = await getFactories()
+  console.log(res)
+  factoryOptions.value = res.data.map((item: any) => ({
+    label: item.name,
+    value: item.id,
+  }))
+  console.log(factoryOptions.value)
 }
 
 function handleSearch() {
@@ -365,7 +403,11 @@ function handleEdit(row: any) {
   }
   dialogForm.value = {
     name: row.name,
+    product_id: row.product_id,
+    tw_id: row.tw_id,
     price: row.price,
+    priceCurrency: row.priceCurrency || 'CNY',
+    factory_price: row.factory_price,
     spec_size,
     spec_color: specObj.color,
     spec_unit: specObj.unit || 'cm',
@@ -440,7 +482,11 @@ function openEditDialog(row: any) {
   }
   dialogForm.value = {
     name: row.name,
+    product_id: row.product_id,
+    tw_id: row.tw_id,
+    factory_price: row.factory_price,
     price: row.price,
+    priceCurrency: row.priceCurrency || 'CNY',
     spec_size,
     spec_color: specObj.color,
     spec_unit: specObj.unit || 'cm',
@@ -455,7 +501,11 @@ function openEditDialog(row: any) {
 function resetDialogForm() {
   dialogForm.value = {
     name: '',
+    product_id: '',
+    tw_id: '',
+    factory_price: null,
     price: null,
+    priceCurrency: 'CNY',
     spec_size: '',
     spec_unit: 'cm',
     spec_color: '',
@@ -485,9 +535,14 @@ async function handleDialogSubmit(form: any) {
   if (form.spec_size) {
     ;[length, width, height] = form.spec_size.split('*')
   }
+  // 组装产品数据，包含币种
   const goodsData = {
     name: form.name,
+    product_id: form.product_id,
+    tw_id: form.tw_id,
+    factory_price: Number(form.factory_price),
     price: Number(form.price),
+    priceCurrency: form.priceCurrency || 'CNY', // 带上币种
     spec: JSON.stringify({
       length,
       width,

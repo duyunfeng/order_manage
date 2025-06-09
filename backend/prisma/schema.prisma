@@ -32,6 +32,10 @@ model customer {
   createdAt DateTime @default(now())
   updatedAt DateTime
   registeredAt String?
+  country   String?
+  website   String?
+  establishedAt String?
+  contacts  Json?
 }
 
 model factory {
