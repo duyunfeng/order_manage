@@ -30,7 +30,13 @@ export async function listFactories(req, res) {
 export async function createFactory(req, res) {
   try {
     const id = req.body.id || `FACTORY_${Date.now()}`;
-    const data = { ...req.body, id, createdAt: new Date(), updatedAt: new Date() };
+    const { name, contact, phone, address, email, manager, status, mainCategories = [] } = req.body;
+    const data = {
+      name, contact, phone, address, email, manager, status, id, createdAt: new Date(), updatedAt: new Date(),
+      ...(mainCategories && mainCategories.length > 0
+        ? { mainCategories: { connect: mainCategories.map(id => ({ id })) } }
+        : {})
+    };
     const factory = await prisma.factory.create({ data });
     res.json({ code: 0, data: factory });
   } catch (error) {

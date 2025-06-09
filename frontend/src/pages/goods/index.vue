@@ -188,6 +188,20 @@ const addFields = ref([
     rules: [{ required: true, message: '必填' }],
   },
   {
+    prop: 'product_id',
+    label: '产品编号',
+    type: 'input',
+    placeholder: '请输入产品编号',
+    rules: [],
+  },
+  {
+    prop: 'tw_id',
+    label: 'TW编号',
+    type: 'input',
+    placeholder: '请输入TW编号',
+    rules: [],
+  },
+  {
     prop: 'price',
     label: '价格',
     type: 'input',

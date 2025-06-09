@@ -274,23 +274,30 @@ function resetDialogForm() {
   }
 }
 
-async function handleDialogSubmit(form: any) {
-  const submitData = { ...form }
-  delete submitData._id
-  try {
-    if (isEdit.value) {
-      await updateFactory(form._id, submitData)
-      ElMessage.success('工厂编辑成功')
+async function handleDialogSubmit(form) {
+  // 保证 mainCategories 一定为数组
+  let mainCategories = form.mainCategories
+  if (!Array.isArray(mainCategories)) {
+    if (mainCategories === undefined || mainCategories === null || mainCategories === '') {
+      mainCategories = []
     } else {
-      await addFactory(submitData)
-      ElMessage.success('工厂添加成功')
+      mainCategories = [mainCategories]
     }
-    fetchFactoriesList()
-    showDialog.value = false
-    resetDialogForm()
-  } catch (e) {
-    ElMessage.error('操作失败，请重试')
   }
+  const submitData = {
+    ...form,
+    mainCategories,
+  }
+  if (isEdit.value) {
+    await updateFactory(form._id, submitData)
+    ElMessage.success('工厂编辑成功')
+  } else {
+    await addFactory(submitData)
+    ElMessage.success('工厂添加成功')
+  }
+  fetchFactoriesList()
+  showDialog.value = false
+  resetDialogForm()
 }
 
 function handleEdit(row: any) {
