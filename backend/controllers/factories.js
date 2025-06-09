@@ -21,7 +21,13 @@ export async function listFactories(req, res) {
       skip: (page - 1) * pageSize,
       take: Number(pageSize),
       orderBy: { createdAt: 'desc' },
-      include: { mainCategories: true },
+      include: {
+        mainCategories: {
+          include: {
+            category: true
+          }
+        }
+      }
     })
   ])
   res.json({ code: 0, data: factories, total })
