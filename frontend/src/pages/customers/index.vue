@@ -64,7 +64,7 @@
               <el-table-column prop="name" label="联系人姓名" />
               <el-table-column prop="phone" label="电话" />
               <el-table-column prop="email" label="邮箱" />
-              <el-table-column label="操作" width="120">
+              <el-table-column label="操作" width="200">
                 <template #default="scope">
                   <el-button size="small" type="primary" @click="editContact(row, scope.row)"
                     >编辑</el-button
@@ -381,7 +381,7 @@ function addContact(customer: any) {
 }
 
 // 保存联系人
-function handleContactDialogSubmit() {
+async function handleContactDialogSubmit() {
   if (!contactDialogCustomer.value) return
   const contacts = contactDialogCustomer.value.contacts || []
   if (contactDialogIndex.value !== null && contactDialogIndex.value >= 0) {
@@ -391,18 +391,33 @@ function handleContactDialogSubmit() {
     // 新增
     contacts.push({ ...contactDialogForm })
   }
-  contactDialogVisible.value = false
+  // 调用后端接口，更新contacts
+  const res = await updateCustomer(contactDialogCustomer.value.id, {
+    ...contactDialogCustomer.value,
+    contacts,
+  })
+  if (res.code === 0) {
+    ElMessage.success('保存成功')
+    contactDialogVisible.value = false
+    fetchCustomersList()
+  } else {
+    ElMessage.error('保存失败')
+  }
 }
 
 // 删除联系人
-function deleteContact(customer: any, contact: any) {
+async function deleteContact(customer: any, contact: any) {
   ElMessageBox.confirm('确定要删除该联系人吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
+  }).then(async () => {
     const idx = customer.contacts.findIndex((c: any) => c === contact)
     if (idx !== -1) customer.contacts.splice(idx, 1)
+    // 同步到后端
+    await updateCustomer(customer.id, {
+      contacts: customer.contacts,
+    })
   })
 }
 </script>

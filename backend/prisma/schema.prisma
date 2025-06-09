@@ -65,10 +65,15 @@ model category {
 model good {
   id        String   @id
   name      String
+  product_id String?
+  tw_id     String?
   status    String   @default("on")
   code      String?
   price     Float
+  priceCurrency String?
+  factory_price Float?
   unit      String?
+  spec_color String?
   spec      String?
   category  String?
   image     String?
