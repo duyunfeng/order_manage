@@ -45,6 +45,7 @@
         </template>
         <template #image="{ row }">
           <div
+            v-if="row.image"
             style="
               width: 48px;
               height: 48px;
@@ -54,7 +55,6 @@
             "
           >
             <img
-              v-if="row.image"
               style="
                 width: 100%;
                 height: 100%;
@@ -63,12 +63,12 @@
                 border: 1px solid #eee;
                 cursor: pointer;
               "
-              :src="row.image"
-              @click="openImagePreview(row.image)"
+              :src="row.imageUrl"
+              @click="openImagePreview(row.imageUrl)"
               alt="产品图片"
             />
-            <span v-else style="font-size: 12px; color: #999"> 暂无图片 </span>
           </div>
+          <div v-else style="font-size: 12px; color: #999; width: 100%">暂无图片</div>
         </template>
         <template #factories="{ row }">
           <el-tag
@@ -341,7 +341,7 @@ async function fetchGoodsList() {
       return {
         ...item,
         spec: JSON.parse(item.spec),
-        image: imageUrl,
+        imageUrl: imageUrl,
       }
     })
     total.value = res.total

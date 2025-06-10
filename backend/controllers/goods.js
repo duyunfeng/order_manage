@@ -18,11 +18,7 @@ export async function listGoods(req, res) {
       take: Number(pageSize),
       orderBy: { createdAt: 'desc' },
       include: {
-        factories: {
-          include: {
-            factory: true
-          }
-        }
+        factories: true
       }
     })
   ])
@@ -41,11 +37,8 @@ export async function createGood(req, res) {
     spec, unit, spec_color, image, status,
     createdAt: new Date(),
     updatedAt: new Date(),
-    factories: factories.length > 0
-      ? { connect: factories.map(fid => ({ id: fid })) }
-      : {},
+    factories: { connect: factories.map(id => ({ id })) },
   };
-  console.log('factories:', factories, Array.isArray(factories));
   const good = await prisma.good.create({ data });
   res.json({ code: 0, data: good })
 }
@@ -67,9 +60,7 @@ export async function updateGood(req, res) {
     data: {
       name, product_id, tw_id, price, priceCurrency, factory_price,
       spec, unit, spec_color, image, status,
-      factories: {
-        set: factories.map(id => ({ id }))
-      }
+      factories: { connect: factories.map(id => ({ id })) }
     },
     include: { factories: true }
   })
