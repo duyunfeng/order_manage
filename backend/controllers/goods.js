@@ -42,6 +42,7 @@ export async function createGood(req, res) {
   };
   console.log('data:', data);
   const good = await prisma.good.create({ data });
+  console.log('创建后返回:', good);
   res.json({ code: 0, data: good })
 }
 
@@ -60,10 +61,11 @@ export async function updateGood(req, res) {
   const data = {
     name, product_id, tw_id, price, priceCurrency, factory_price,
     spec, unit, spec_color, image, status,
-    factories: { connect: factories.map(id => ({ id })) },
+    factories: { set: factories.map(id => ({ id })) },
   }
   console.log('data:', data);
   const good = await prisma.good.update({ where: { id }, data })
+  console.log('更新后返回:', good);
   res.json({ code: 0, data: good })
 }
 
