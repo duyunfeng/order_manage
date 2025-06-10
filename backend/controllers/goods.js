@@ -1,4 +1,5 @@
 import pkg from '@prisma/client'
+import { connect } from 'http2'
 const { PrismaClient } = pkg
 
 const prisma = new PrismaClient()
@@ -60,7 +61,7 @@ export async function updateGood(req, res) {
     data: {
       name, product_id, tw_id, price, priceCurrency, factory_price,
       spec, unit, spec_color, image, status,
-      factories: { connect: factories.map(id => ({ id })) }
+      factories: { set: factories.map(id => ({ id })) }
     },
     include: { factories: true }
   })
