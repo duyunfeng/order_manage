@@ -355,12 +355,10 @@ async function fetchGoodsList() {
 
 const fetchFactoryList = async () => {
   const res = await getFactories()
-  console.log(res)
   factoryOptions.value = res.data.map((item: any) => ({
     label: item.name,
     value: item.id,
   }))
-  console.log(factoryOptions.value)
 }
 
 function handleSearch() {

@@ -232,7 +232,6 @@ async function fetchCategoriesList() {
   try {
     const res = await getCategories()
     categoriesList.value = res.data || res
-    console.log(categoriesList.value)
   } catch (e) {
     categoriesList.value = []
   }

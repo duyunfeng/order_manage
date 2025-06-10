@@ -42,7 +42,6 @@ export async function createGood(req, res) {
       factories: { connect: factories.map(id => ({ id })) },
     };
     const good = await prisma.good.create({ data }, { include: { factories: true } });
-    console.log('创建后返回:', good);
     res.json({ code: 0, data: good })
   } catch (error) {
     console.error('创建商品失败:', error);
@@ -73,7 +72,6 @@ export async function updateGood(req, res) {
     data,
     include: { factories: true }
   })
-  console.log('更新后返回:', good);
   res.json({ code: 0, data: good })
   } catch (error) {
     console.error('更新商品失败:', error);
