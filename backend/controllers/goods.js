@@ -27,23 +27,27 @@ export async function listGoods(req, res) {
 }
 
 export async function createGood(req, res) {
-  const {
-    name, product_id, tw_id, price, priceCurrency, factory_price,
-    spec, unit, spec_color, image, status, factories = []
-  } = req.body
-  const id = req.body.id || `GOOD_${Date.now()}`;
-  const data = {
-    id,
-    name, product_id, tw_id, price, priceCurrency, factory_price,
-    spec, unit, spec_color, image, status,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    factories: { connect: factories.map(id => ({ id })) },
-  };
-  console.log('data:', data);
-  const good = await prisma.good.create({ data }, { include: { factories: true } });
-  console.log('创建后返回:', good);
-  res.json({ code: 0, data: good })
+  try {
+    const {
+      name, product_id, tw_id, price, priceCurrency, factory_price,
+      spec, unit, spec_color, image, status, factories = []
+    } = req.body
+    const id = req.body.id || `GOOD_${Date.now()}`;
+    const data = {
+      id,
+      name, product_id, tw_id, price, priceCurrency, factory_price,
+      spec, unit, spec_color, image, status,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      factories: { connect: factories.map(id => ({ id })) },
+    };
+    const good = await prisma.good.create({ data }, { include: { factories: true } });
+    console.log('创建后返回:', good);
+    res.json({ code: 0, data: good })
+  } catch (error) {
+    console.error('创建商品失败:', error);
+    res.status(500).json({ code: 1, message: '创建商品失败' });
+  }
 }
 
 export async function getGoodById(req, res) {
@@ -53,7 +57,8 @@ export async function getGoodById(req, res) {
 }
 
 export async function updateGood(req, res) {
-  const { id } = req.params
+  try {
+    const { id } = req.params
   const {
     name, product_id, tw_id, price, priceCurrency, factory_price,
     spec, unit, spec_color, image, status, factories = []
@@ -61,9 +66,8 @@ export async function updateGood(req, res) {
   const data = {
     name, product_id, tw_id, price, priceCurrency, factory_price,
     spec, unit, spec_color, image, status,
-    factories: { connect: factories.map(id => ({ id })) }
+    factories: { set: factories.map(id => ({ id })) }
   }
-  console.log('data:', data);
   const good = await prisma.good.update({
     where: { id },
     data,
@@ -71,6 +75,10 @@ export async function updateGood(req, res) {
   })
   console.log('更新后返回:', good);
   res.json({ code: 0, data: good })
+  } catch (error) {
+    console.error('更新商品失败:', error);
+    res.status(500).json({ code: 1, message: '更新商品失败' });
+  }
 }
 
 export async function deleteGood(req, res) {
